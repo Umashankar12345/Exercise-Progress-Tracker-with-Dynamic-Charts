@@ -147,3 +147,23 @@ Here is the technical flow of the PR detection system:
 
 3. **Instant UI Feedback (PR Badge):**
    Because this calculation happens immediately upon saving the set, the JSON response returned to the React frontend contains the updated `is_pr` flag. The React `WorkoutTable` component reads this boolean. If `true`, it instantly renders a distinct visual "PR Badge" (🏆) next to the logged set. This creates a highly satisfying, instantaneous feedback loop that gamifies the user's progression without requiring a page refresh.
+
+---
+
+## Interview Answer: AI-Generated Weekly Workout Plan
+
+**Question:** How does the application generate a personalized weekly workout schedule for the user?
+
+**Answer:**
+To take the cognitive load off the user, I implemented a feature where the AI acts as a personal trainer, dynamically generating a 7-day workout schedule specifically tailored to their recent activity.
+
+Here is how the scheduling logic is implemented:
+
+1. **Context-Rich Prompting (`AIService.php`):**
+   The schedule generation relies on the Anthropic Claude API. Inside the `AIService`, I construct a highly specific prompt that injects the user's last 30 days of workout history (including specific muscle groups targeted and rest days taken). The prompt instructs Claude to act as an expert fitness coach and generate an optimal 7-day split for the upcoming week.
+
+2. **Strict JSON Constraints:**
+   LLMs can sometimes be verbose or unpredictable. To ensure the React frontend can reliably parse the schedule, the `AIService` prompt strictly enforces a JSON output format. It requires a 7-day structure where each day explicitly maps to a `muscleGroup` (e.g., "Chest & Triceps", "Legs", or "Rest") and an `intensity` level.
+
+3. **Frontend Integration (`ScheduleCard` UI):**
+   Once the Laravel backend caches this JSON payload and serves it via the API, the React application consumes it. I built a dynamic `ScheduleCard` component using a CSS Grid layout. It maps over the 7-day JSON object, rendering each day as a card with the assigned muscle group and intensity. If the AI detects the user has been overtraining, it intelligently schedules "Rest" days, which the UI cleanly highlights, ensuring the user maintains a healthy, sustainable fitness routine.

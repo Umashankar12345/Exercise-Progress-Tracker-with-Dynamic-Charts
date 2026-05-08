@@ -22,6 +22,9 @@ class WorkoutController extends Controller
         ]);
 
         $workout = $request->user()->workouts()->create($validated);
+        
+        \App\Jobs\AnalyzeWorkoutJob::dispatch($workout);
+        
         return response()->json($workout, 201);
     }
 

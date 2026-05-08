@@ -127,3 +127,23 @@ Here is a breakdown of the implementation:
 
 3. **Calendar UI Rendering:**
    On the frontend, the React application renders this data using a custom `StreakCalendar` component. It maps over the 30-day array to generate a compact visual grid. Using conditional Tailwind CSS classes (e.g., a vibrant green background for a completed workout, and a muted gray or red for a missed day), the user instantly sees a visual map of their consistency. This immediate visual feedback loop serves as a powerful psychological motivator, encouraging them to "keep the chain going."
+
+---
+
+## Interview Answer: Automatic Personal Record (PR) Detection
+
+**Question:** How does the system instantly detect and flag a new Personal Record, and what formula is used to calculate it?
+
+**Answer:**
+To provide immediate positive reinforcement, I engineered an event-driven system that evaluates and flags new Personal Records (PRs) the precise moment a user logs a set.
+
+Here is the technical flow of the PR detection system:
+
+1. **Event-Driven Backend (`WorkoutObserver`):**
+   Instead of calculating PRs in bulk when a page loads, the system uses Laravel's `WorkoutObserver` (or a dedicated `WorkoutSetObserver`). The moment a new set is successfully saved to the database, the observer triggers a background check. It compares the newly logged set against the user's historical maximums for that specific `exercise_id`. If the new set breaks a record, an `is_pr` boolean flag is saved to the set.
+
+2. **The 1RM Formula:**
+   A PR isn't just about lifting the absolute heaviest weight; volume matters. To accurately determine a PR across different rep ranges, the backend utilizes the Epley formula: `1RM = Weight × (1 + (Reps / 30))`. This standardizes all sets into an Estimated One-Rep Max. If the calculated 1RM of the current set is higher than the user's historical 1RM for that exercise, it triggers the PR flag.
+
+3. **Instant UI Feedback (PR Badge):**
+   Because this calculation happens immediately upon saving the set, the JSON response returned to the React frontend contains the updated `is_pr` flag. The React `WorkoutTable` component reads this boolean. If `true`, it instantly renders a distinct visual "PR Badge" (🏆) next to the logged set. This creates a highly satisfying, instantaneous feedback loop that gamifies the user's progression without requiring a page refresh.

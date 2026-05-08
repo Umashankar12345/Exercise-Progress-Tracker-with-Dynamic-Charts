@@ -30,6 +30,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('goals', GoalController::class);
 
     // Progress & AI & Export
+    Route::get('/progress/summary', [ProgressController::class, 'summary']);
+    Route::get('/progress/chart', [ProgressController::class, 'chart']);
+    Route::get('/progress/muscles', [ProgressController::class, 'muscles']);
     Route::get('/progress', [ProgressController::class, 'index']);
     Route::post('/progress/{snapshot}/photo', [ProgressPhotoController::class, 'store']);
     Route::get('/ai/insights', [ProgressController::class, 'insights']);

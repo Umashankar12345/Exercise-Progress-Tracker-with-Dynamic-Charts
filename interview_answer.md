@@ -64,3 +64,26 @@ Here is the technical implementation:
 
 3. **24-Hour Cache TTL:**
    Once the background worker successfully retrieves the JSON analysis from Claude, the result is immediately serialized and stored in a Redis cache store. I set a strict 24-hour Time-to-Live (TTL) on this cached data (`now()->addHours(24)`). This ensures the dashboard's AI Coach panel is always snappy when polled by the React frontend, drastically reduces redundant external API calls, and automatically expires stale insights just in time for the user's next daily workout.
+
+---
+
+## Interview Answer: Decoupled REST API Architecture
+
+**Question:** Why did you choose a decoupled architecture (Laravel API + React SPA) over a monolith, and how do they communicate?
+
+**Answer:**
+I intentionally designed this project with a fully decoupled architecture to ensure strict separation of concerns, maximize scalability, and provide a fluid, app-like user experience on the frontend. 
+
+Here is how the architecture is structured and secured:
+
+1. **Strict Separation of Concerns:**
+   The backend acts strictly as a headless JSON API powered by Laravel 11. It has absolutely no knowledge of the UI layer. The frontend is a standalone React Single Page Application (SPA). This decoupling means the API can easily serve other clients in the future (like an iOS or Android mobile app) without requiring any backend refactoring.
+
+2. **Authentication via Laravel Sanctum:**
+   Because the frontend and backend are fully separated, I implemented Laravel Sanctum to provide lightweight, secure API token authentication. When a user authenticates via the React app, Sanctum issues an encrypted token that the frontend automatically attaches to the `Authorization` header of all subsequent Axios requests.
+
+3. **Structured Data via API Resources:**
+   To maintain a strict and reliable contract between the frontend and backend, the Laravel application utilizes Eloquent API Resources. This ensures that the data structures returned to the React SPA are strictly formatted, preventing sensitive data exposure and standardizing the JSON payloads across all API endpoints.
+
+4. **Optimized Frontend Fetching with React Query:**
+   On the client side, the React SPA doesn't just manually fetch data. I integrated React Query to handle all asynchronous API requests. This provides aggressive client-side caching, seamless background refetching, and automatic loading/error state management out-of-the-box, ensuring the UI remains incredibly responsive and perfectly synced with the remote Laravel backend.

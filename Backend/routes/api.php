@@ -8,6 +8,8 @@ use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\WorkoutSetController;
+use App\Http\Controllers\ExportController;
+use App\Http\Controllers\ProgressPhotoController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -27,7 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sets', WorkoutSetController::class);
     Route::apiResource('goals', GoalController::class);
 
-    // Progress & AI
+    // Progress & AI & Export
     Route::get('/progress', [ProgressController::class, 'index']);
+    Route::post('/progress/{snapshot}/photo', [ProgressPhotoController::class, 'store']);
     Route::get('/ai/insights', [ProgressController::class, 'insights']);
+    Route::get('/workouts/{workout}/export', [ExportController::class, 'exportWorkout']);
 });

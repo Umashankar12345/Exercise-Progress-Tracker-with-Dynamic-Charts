@@ -44,3 +44,23 @@ Here is how the data flows from the database to the UI:
    - **Muscle Radar:** The muscle distribution data is passed into a custom `MuscleRadar` component (using Recharts `RadarChart` or progress bars) to visually represent the user's muscle balance.
 
 This separation of concerns ensures the frontend remains lightweight and focused solely on rendering, while the backend handles the heavy lifting of data aggregation and mathematical estimations.
+
+---
+
+## Interview Answer: Redis Async Queue & Caching System
+
+**Question:** How did you ensure the third-party AI integration didn't severely impact the application's response times?
+
+**Answer:**
+Integrating third-party LLMs like Claude can introduce unpredictable latency (often taking 3–10 seconds to generate a response). To guarantee that the user never experiences a blocked response while saving a workout, I decoupled the AI analysis from the main request lifecycle using Redis and Laravel Horizon.
+
+Here is the technical implementation:
+
+1. **Asynchronous Queues:**
+   Instead of awaiting the HTTP response from Anthropic during the `WorkoutController@store` execution, the controller simply dispatches an `AnalyzeWorkoutJob` and immediately returns a `201 Created` response. This keeps the user's perceived load time under 100 milliseconds.
+
+2. **Redis & Laravel Horizon:**
+   The dispatched job is pushed onto a robust Redis queue. I utilize Laravel Horizon to monitor and manage these background workers, providing a dedicated dashboard to track job throughput, failures, and execution times in real-time.
+
+3. **24-Hour Cache TTL:**
+   Once the background worker successfully retrieves the JSON analysis from Claude, the result is immediately serialized and stored in a Redis cache store. I set a strict 24-hour Time-to-Live (TTL) on this cached data (`now()->addHours(24)`). This ensures the dashboard's AI Coach panel is always snappy when polled by the React frontend, drastically reduces redundant external API calls, and automatically expires stale insights just in time for the user's next daily workout.

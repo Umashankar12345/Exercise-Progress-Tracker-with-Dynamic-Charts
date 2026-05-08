@@ -107,3 +107,23 @@ Here is how the feature works end-to-end:
 
 3. **Frontend Rendering (Live Progress Bars):**
    On the frontend, the React SPA consumes this pre-calculated percentage. I built a dynamic `GoalProgress` component using Tailwind CSS. It maps over the user's active goals and uses the percentage to dynamically update the `width` style of a colored `<div>`. This renders a clean, live completion bar that provides immediate visual reinforcement of their fitness journey.
+
+---
+
+## Interview Answer: Gamified Streak Calendar
+
+**Question:** How did you implement the gamified consistency tracking and the workout streak algorithm?
+
+**Answer:**
+To drive user retention and encourage consistency, I built a gamified "Streak Calendar" that visually rewards users for sticking to their workout schedules.
+
+Here is a breakdown of the implementation:
+
+1. **The Streak Algorithm (`UserController`):**
+   The core logic for calculating a user's streak lives in the backend within the `UserController`. When the `/api/user/streak` endpoint is called, the algorithm queries the user's `workouts` table, ordering sessions by `started_at` descending. It iterates through the dates to check for consecutive days. If the gap between recorded workouts is exactly one day, the streak increments. If the gap is larger than 48 hours without a workout (ignoring planned rest days), the streak breaks and resets.
+
+2. **Gamified Consistency Tracking:**
+   Beyond just a single "current streak" number, the application tracks the user's historical consistency. The backend evaluates the last 30 days, flagging each day with a boolean `workedOut` status based on whether a workout record exists for that specific date.
+
+3. **Calendar UI Rendering:**
+   On the frontend, the React application renders this data using a custom `StreakCalendar` component. It maps over the 30-day array to generate a compact visual grid. Using conditional Tailwind CSS classes (e.g., a vibrant green background for a completed workout, and a muted gray or red for a missed day), the user instantly sees a visual map of their consistency. This immediate visual feedback loop serves as a powerful psychological motivator, encouraging them to "keep the chain going."

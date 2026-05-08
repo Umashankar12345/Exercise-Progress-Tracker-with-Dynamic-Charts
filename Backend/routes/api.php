@@ -7,6 +7,7 @@ use App\Http\Controllers\WorkoutController;
 use App\Http\Controllers\ExerciseController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\GoalController;
+use App\Http\Controllers\WorkoutSetController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -23,6 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Core API Resources
     Route::apiResource('workouts', WorkoutController::class);
     Route::apiResource('exercises', ExerciseController::class);
+    Route::apiResource('sets', WorkoutSetController::class);
     Route::apiResource('goals', GoalController::class);
 
     // Progress & AI

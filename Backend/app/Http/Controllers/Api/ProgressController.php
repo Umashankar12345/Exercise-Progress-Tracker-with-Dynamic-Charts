@@ -50,12 +50,4 @@ class ProgressController extends Controller
         ]);
     }
 
-    public function insights(Request $request)
-    {
-        // Mock data for AI insights
-        $mockWorkoutData = $request->user()->workouts()->latest()->take(5)->get()->toArray();
-        $insights = $this->aiService->generateInsights($mockWorkoutData);
-        
-        return response()->json(['insights' => $insights]);
-    }
 }

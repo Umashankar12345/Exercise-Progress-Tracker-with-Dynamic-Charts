@@ -9,7 +9,12 @@ class GoalController extends Controller
 {
     public function index(Request $request)
     {
-        return response()->json($request->user()->goals);
+        $goals = $request->user()->goals->map(function ($goal) {
+            // Mock percentage calculation
+            $goal->percentage = $goal->target_weight ? min(100, rand(10, 90)) : 0; 
+            return $goal;
+        });
+        return response()->json($goals);
     }
 
     public function store(Request $request)

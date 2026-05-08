@@ -167,3 +167,43 @@ Here is how the scheduling logic is implemented:
 
 3. **Frontend Integration (`ScheduleCard` UI):**
    Once the Laravel backend caches this JSON payload and serves it via the API, the React application consumes it. I built a dynamic `ScheduleCard` component using a CSS Grid layout. It maps over the 7-day JSON object, rendering each day as a card with the assigned muscle group and intensity. If the AI detects the user has been overtraining, it intelligently schedules "Rest" days, which the UI cleanly highlights, ensuring the user maintains a healthy, sustainable fitness routine.
+
+---
+
+## Interview Answer: Muscle Group Balance Detection
+
+**Question:** How does the application help users prevent injury and ensure they are training symmetrically?
+
+**Answer:**
+To prevent common fitness injuries caused by overtraining specific muscles (like prioritizing chest over back), I implemented an automated Muscle Group Balance Detection feature.
+
+Here is how it operates:
+
+1. **Volume Aggregation (`ProgressService`):**
+   When a user logs their sets, the `ProgressService` calculates the total volume (weight × reps) and aggregates it by the `muscle_group` defined on the `Exercise` model. It converts this raw volume into a percentage (e.g., Chest: 45%, Back: 15%, Legs: 40%).
+
+2. **AI Warning System:**
+   This aggregated muscle volume percentage is passed into the `AIService` payload. Claude analyzes the ratio. If it detects a severe imbalance—for instance, if pushing volume (chest/shoulders) vastly exceeds pulling volume (back)—the AI strictly flags this in the JSON response under the `warning` key.
+
+3. **Visual Feedback:**
+   Simultaneously, the frontend React application consumes the `GET /api/progress/muscles` endpoint and renders the exact percentages via the `MuscleRadar` component. This dual approach of visual data (the radar chart) and explicit verbal warnings (the AI Coach Panel) ensures users correct their imbalances before they lead to injuries.
+
+---
+
+## Interview Answer: Full-Stack Service Layer Pattern
+
+**Question:** How did you structure the backend to ensure a clean, production-grade codebase?
+
+**Answer:**
+To ensure the application is scalable, testable, and maintainable, I strictly adhered to the Service Layer Pattern and Clean Architecture principles within Laravel.
+
+Here is the breakdown of the architecture:
+
+1. **Fat Services, Skinny Controllers:**
+   I moved all complex business logic out of the controllers. For instance, `WorkoutController` simply receives a request and delegates the heavy lifting to `WorkoutService` or `AnalyzeWorkoutJob`. This keeps controllers incredibly lean—focused entirely on HTTP routing and returning JSON responses.
+
+2. **Dedicated Service Classes:**
+   Logic is highly compartmentalized. `AIService` handles all Anthropic API communication and prompt engineering. `ProgressService` handles all mathematical data aggregation (like 1RM calculations and muscle volume percentages). This makes the code highly reusable; if I need to calculate volume for a new feature, I inject the `ProgressService` rather than duplicating code.
+
+3. **Form Requests & API Resources:**
+   Data validation is completely abstracted into Laravel Form Requests, ensuring controllers never see invalid data. Furthermore, outgoing data is strictly formatted using Eloquent API Resources. This acts as a robust contract between the backend and the React SPA, guaranteeing that internal database structures (like hidden pivot columns) are never accidentally leaked to the client.

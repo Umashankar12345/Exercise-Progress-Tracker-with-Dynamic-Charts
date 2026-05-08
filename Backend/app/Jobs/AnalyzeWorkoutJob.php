@@ -32,14 +32,24 @@ class AnalyzeWorkoutJob implements ShouldQueue
     {
         Log::info("Analyzing workout ID: {$this->workout->id} in background job.");
         
-        // This simulates gathering all recent workouts to pass to AI
-        $workoutData = $this->workout->user->workouts()->with('workoutExercises.workoutSets')->latest()->take(3)->get()->toArray();
+        // This simulates gathering last 30 days history to pass to AI
+        $workoutData = $this->workout->user->workouts()
+            ->where('started_at', '>=', now()->subDays(30))
+            ->with('workoutExercises.workoutSets')
+            ->get()
+            ->toArray();
         
         $insights = $aiService->generateInsights($workoutData);
         
         if ($insights) {
             Log::info("Generated AI Insights for User ID: {$this->workout->user_id}", ['insights' => $insights]);
-            // In a real app, you would save these insights to the database or notify the user
+            
+            // Cached in Redis for 24h
+            \Illuminate\Support\Facades\Cache::store('redis')->put(
+                'ai_insights_user_' . $this->workout->user_id,
+                $insights,
+                now()->addHours(24)
+            );
         }
     }
 }

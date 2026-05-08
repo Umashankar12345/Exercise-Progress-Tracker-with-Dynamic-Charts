@@ -17,9 +17,18 @@ class AIController extends Controller
 
     public function insights(Request $request)
     {
-        // Mock data for AI insights
-        $mockWorkoutData = $request->user()->workouts()->latest()->take(5)->get()->toArray();
-        $insights = $this->aiService->generateInsights($mockWorkoutData);
+        $userId = $request->user()->id;
+        
+        // Fetch from Redis Cache
+        $insights = \Illuminate\Support\Facades\Cache::store('redis')->get('ai_insights_user_' . $userId);
+        
+        if (!$insights) {
+            $insights = [
+                'tip' => 'No recent AI insights found. Log a workout to generate new insights!',
+                'warning' => 'Waiting for workout data.',
+                'recommendation' => 'Keep pushing forward.'
+            ];
+        }
         
         return response()->json(['insights' => $insights]);
     }

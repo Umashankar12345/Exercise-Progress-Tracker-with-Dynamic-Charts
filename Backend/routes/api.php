@@ -2,14 +2,14 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\WorkoutController;
-use App\Http\Controllers\ExerciseController;
-use App\Http\Controllers\ProgressController;
-use App\Http\Controllers\GoalController;
-use App\Http\Controllers\WorkoutSetController;
-use App\Http\Controllers\ExportController;
-use App\Http\Controllers\ProgressPhotoController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\WorkoutController;
+use App\Http\Controllers\Api\ExerciseController;
+use App\Http\Controllers\Api\ProgressController;
+use App\Http\Controllers\Api\GoalController;
+use App\Http\Controllers\Api\WorkoutSetController;
+use App\Http\Controllers\Api\ExportController;
+use App\Http\Controllers\Api\ProgressPhotoController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();

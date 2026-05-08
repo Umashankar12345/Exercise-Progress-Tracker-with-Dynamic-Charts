@@ -87,3 +87,23 @@ Here is how the architecture is structured and secured:
 
 4. **Optimized Frontend Fetching with React Query:**
    On the client side, the React SPA doesn't just manually fetch data. I integrated React Query to handle all asynchronous API requests. This provides aggressive client-side caching, seamless background refetching, and automatic loading/error state management out-of-the-box, ensuring the UI remains incredibly responsive and perfectly synced with the remote Laravel backend.
+
+---
+
+## Interview Answer: Goal Tracking with Progress %
+
+**Question:** How did you implement goal tracking to keep users motivated, and how are the live completion bars calculated?
+
+**Answer:**
+To provide users with tangible, measurable targets, I implemented a robust goal-tracking system that spans from the database layer directly to the UI.
+
+Here is how the feature works end-to-end:
+
+1. **Database Layer (`goals` table):**
+   The `goals` table was designed to handle various metrics. It stores a user's target weight, the specific exercise (if applicable), and a target date. It relates directly back to the `User` model, ensuring goals are strictly partitioned by the authenticated user.
+
+2. **Backend Calculation (`GoalController`):**
+   Instead of forcing the frontend to query historical data and calculate progress manually, the Laravel API handles this heavy lifting. Inside the `GoalController`, when fetching a user's goals, the system cross-references their recent `WorkoutSet` data. It calculates the exact percentage of completion (e.g., comparing their current max weight lifted against their `target_weight`) and dynamically attaches this `percentage` to the structured JSON response.
+
+3. **Frontend Rendering (Live Progress Bars):**
+   On the frontend, the React SPA consumes this pre-calculated percentage. I built a dynamic `GoalProgress` component using Tailwind CSS. It maps over the user's active goals and uses the percentage to dynamically update the `width` style of a colored `<div>`. This renders a clean, live completion bar that provides immediate visual reinforcement of their fitness journey.

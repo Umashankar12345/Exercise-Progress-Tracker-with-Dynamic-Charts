@@ -44,4 +44,14 @@ class WorkoutController extends Controller
         $workout->delete();
         return response()->json(null, 204);
     }
+
+    public function prs(Request $request)
+    {
+        // Mock calculation for personal records
+        return response()->json([
+            ['exercise' => 'Bench Press', 'weight' => '100', 'date' => '2026-05-01'],
+            ['exercise' => 'Squat', 'weight' => '140', 'date' => '2026-05-02'],
+            ['exercise' => 'Deadlift', 'weight' => '160', 'date' => '2026-05-03'],
+        ]);
+    }
 }

@@ -4,32 +4,32 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Services\AIService;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
 
 class AIController extends Controller
 {
-    protected $aiService;
+    public function __construct(protected AIService $aiService) {}
 
-    public function __construct(AIService $aiService)
-    {
-        $this->aiService = $aiService;
-    }
-
+    /**
+     * GET /api/ai/insights
+     *
+     * Serves cached insights from Redis/DB on page load.
+     * Real-time updates arrive via WebSocket (InsightReady event).
+     * If no cache exists, returns the AI fallback insights.
+     */
     public function insights(Request $request)
     {
-        $userId = $request->user()->id;
-        
-        // Fetch from Redis Cache
-        $insights = \Illuminate\Support\Facades\Cache::store('redis')->get('ai_insights_user_' . $userId);
-        
-        if (!$insights) {
-            $insights = [
-                'tip' => 'No recent AI insights found. Log a workout to generate new insights!',
-                'warning' => 'Waiting for workout data.',
-                'recommendation' => 'Keep pushing forward.'
-            ];
+        $userId   = $request->user()->id;
+        $cacheKey = "insights:{$userId}";
+
+        // 1. Try cache first — populated by AnalyzeWorkoutJob
+        $cached = Cache::get($cacheKey);
+
+        if ($cached) {
+            return response()->json($cached);
         }
-        
-        return response()->json(['insights' => $insights]);
+
+        // 2. No cache — return structured fallback so UI is never empty
+        return response()->json($this->aiService->analyzeProgress([]));
     }
 }

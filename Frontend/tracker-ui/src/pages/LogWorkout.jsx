@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import AIInsightsCard from '../components/AIInsightsCard';
 
 const EXERCISES = {
   Chest:     ['Bench Press', 'Incline DB Press', 'Cable Fly', 'Chest Dips'],
@@ -10,6 +11,7 @@ const EXERCISES = {
   Core:      ['Plank', 'Cable Crunch', 'Leg Raise'],
 };
 
+const GOAL_COLORS = ['var(--green)', 'var(--orange)', 'var(--accent)', 'var(--blue)'];
 let nextId = 4;
 const defaultSets = [
   { id: 1, reps: 10, weight: 135 },
@@ -24,29 +26,11 @@ export default function LogWorkout() {
   const [status, setStatus]     = useState(null);
   const [msg, setMsg]           = useState('');
   const [goals, setGoals]       = useState([]);
-  const [insights, setInsights] = useState([]);
-  const [insightLoading, setInsightLoading] = useState(true);
 
-  // Fetch real goals + AI insights from API
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [g, ins] = await Promise.all([
-          api.get('/goals'),
-          api.get('/ai/insights'),
-        ]);
-        setGoals(g.data);
-        setInsights(ins.data);
-      } catch (e) {
-        console.error('Failed to load sidebar data', e);
-      } finally {
-        setInsightLoading(false);
-      }
-    };
-    load();
+    api.get('/goals').then(r => setGoals(r.data)).catch(() => {});
   }, []);
 
-  /* ── set helpers ── */
   const updateSet = (id, field, val) =>
     setSets(prev => prev.map(s => s.id === id ? { ...s, [field]: Number(val) } : s));
   const addSet = () =>
@@ -54,7 +38,6 @@ export default function LogWorkout() {
   const delSet = (id) =>
     setSets(prev => prev.length > 1 ? prev.filter(s => s.id !== id) : prev);
 
-  /* ── submit to real API ── */
   const handleSubmit = async () => {
     if (!exercise) { setStatus('error'); setMsg('Please select an exercise first.'); return; }
     setStatus('loading');
@@ -63,25 +46,19 @@ export default function LogWorkout() {
       await api.post('/workouts', {
         name: exercise,
         started_at: new Date().toISOString(),
-        ended_at: new Date().toISOString(),
+        ended_at:   new Date().toISOString(),
         notes,
         sets: sets.map(s => ({ reps: s.reps, weight: s.weight })),
       });
       setStatus('success');
-      setMsg(`✅ "${exercise}" saved to database! AI analysis job dispatched to Laravel queue.`);
-      setSets(defaultSets);
-      setExercise('');
-      setNotes('');
+      setMsg(`✅ "${exercise}" saved! WorkoutObserver fired 5 events → AI job dispatched to queue.`);
+      setSets(defaultSets); setExercise(''); setNotes('');
       setTimeout(() => { setStatus(null); setMsg(''); }, 6000);
     } catch (err) {
       setStatus('error');
-      setMsg(err.response?.data?.message || 'Failed to save workout. Check if backend is running.');
+      setMsg(err.response?.data?.message || 'Failed to save. Is Laravel running on :8000?');
     }
   };
-
-  const INSIGHT_STYLES = { tip: 'tip', warning: 'warn', alert: 'alert' };
-  const INSIGHT_ICONS  = { tip: '✅', warning: '⚠️', alert: '🔴' };
-  const GOAL_COLORS    = ['var(--green)', 'var(--orange)', 'var(--accent)', 'var(--blue)'];
 
   return (
     <>
@@ -90,7 +67,7 @@ export default function LogWorkout() {
         <div className="live-dot" style={{ width: 8, height: 8 }}></div>
         <span className="ws-green">API connected</span>
         <span style={{ color: 'var(--text3)' }}>·</span>
-        <span>POST /api/workouts → WorkoutController → Queue job dispatched</span>
+        <span>POST /api/workouts → WorkoutObserver → 5 events broadcast</span>
         <div className="ws-events">
           {['workout.saved','pr.achieved','streak.updated','insight.ready','goal.progress'].map(e => (
             <span key={e} className="ws-evt">{e}</span>
@@ -98,13 +75,12 @@ export default function LogWorkout() {
         </div>
       </div>
 
-      {/* Alert */}
       {msg && <div className={status === 'success' ? 'alert-success' : 'alert-error'}>{msg}</div>}
 
       <div className="sec-head">
         <div className="sec-label">Log Your Session</div>
         <div className="sec-line"></div>
-        <div className="sec-tag">POST /api/workouts → Real Laravel DB</div>
+        <div className="sec-tag">POST /api/workouts → WorkoutObserver → InsightReady broadcast</div>
       </div>
 
       <div className="content-grid">
@@ -113,13 +89,13 @@ export default function LogWorkout() {
           <div className="card-hd">
             <div>
               <div className="card-title">Record your session</div>
-              <div className="card-sub">Data saved to SQLite → AI analysis → PR detection</div>
+              <div className="card-sub">Saved to DB → AI job dispatched → InsightReady broadcast via Reverb</div>
             </div>
             <div className="live-indicator"><div className="live-dot"></div>Laravel ready</div>
           </div>
           <div className="card-body">
             <div className="form-section">
-              {/* Exercise selector */}
+
               <div className="field">
                 <label>Exercise</label>
                 <select value={exercise} onChange={e => setExercise(e.target.value)}>
@@ -132,7 +108,6 @@ export default function LogWorkout() {
                 </select>
               </div>
 
-              {/* Set header */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text2)' }}>Sets</span>
                 <span style={{ fontSize: 11, color: 'var(--text3)' }}>Weight in lbs · tap to edit</span>
@@ -181,76 +156,30 @@ export default function LogWorkout() {
               </div>
 
               <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 9, padding: '10px 12px', fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.7 }}>
-                <div style={{ color: 'var(--text)', fontWeight: 500, marginBottom: 4, fontSize: 12 }}>⚡ On submit, Laravel:</div>
-                saves to DB · checks PR (Epley 1RM) · updates streak · dispatches{' '}
-                <span style={{ color: 'var(--accent)' }}>AnalyzeWorkoutJob</span> to queue
+                <div style={{ color: 'var(--text)', fontWeight: 500, marginBottom: 4, fontSize: 12 }}>⚡ On submit, WorkoutObserver fires:</div>
+                <span style={{ color: 'var(--green)' }}>workout.saved</span> · <span style={{ color: 'var(--orange)' }}>streak.updated</span> · <span style={{ color: 'var(--blue)' }}>muscle.balance.updated</span> · <span style={{ color: 'var(--yellow)' }}>goal.progress</span> → then <span style={{ color: 'var(--accent)' }}>AnalyzeWorkoutJob</span> dispatched → <span style={{ color: 'var(--green)' }}>insight.ready</span> broadcast
               </div>
 
               <button className="btn-submit" onClick={handleSubmit} disabled={status === 'loading'}>
                 {status === 'loading'
                   ? <><div className="spinner"></div> Saving to Laravel DB…</>
-                  : '⚡ Log Exercise & Save to Database'}
+                  : '⚡ Log Exercise & Trigger 5 WebSocket Events'}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── AI PANEL (right) ── */}
+        {/* ── AI PANEL — real hook + Reverb WebSocket ── */}
         <div className="ai-panel">
-          {/* AI Insights from API */}
-          <div className="ai-card">
-            <div className="ai-glow-header">
-              <span style={{ fontSize: 18 }}>🤖</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>AI Coach Insights</div>
-                <div className="ai-status">
-                  <div className="live-dot"></div>
-                  /api/ai/insights · Claude
-                </div>
-              </div>
-              <span className="ai-label">AI LIVE</span>
-            </div>
-            <div className="insights-list">
-              {insightLoading
-                ? <div style={{ padding: 16, color: 'var(--text3)' }}>Loading AI insights…</div>
-                : insights.length === 0
-                  ? (
-                    <>
-                      {/* Fallback default insights if API returns empty */}
-                      <div className="insight tip">
-                        <div className="insight-icon">✅</div>
-                        <div className="insight-text"><strong>Progressive overload detected.</strong> Bench press volume up 12% — excellent adaptation.</div>
-                      </div>
-                      <div className="insight warn">
-                        <div className="insight-icon">⚠️</div>
-                        <div className="insight-text"><strong>Shoulder imbalance.</strong> Pushing 2× pulling volume. Add rows to rebalance.</div>
-                      </div>
-                      <div className="insight alert">
-                        <div className="insight-icon">🔴</div>
-                        <div className="insight-text"><strong>Deload recommended.</strong> 14 days straight — light week advised.</div>
-                      </div>
-                    </>
-                  )
-                  : insights.map((ins, i) => (
-                    <div key={i} className={`insight ${INSIGHT_STYLES[ins.type] ?? 'tip'}`}>
-                      <div className="insight-icon">{INSIGHT_ICONS[ins.type] ?? '✅'}</div>
-                      <div className="insight-text" dangerouslySetInnerHTML={{ __html: ins.message }}></div>
-                    </div>
-                  ))}
-            </div>
-            <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)' }}>
-              <button style={{ width: '100%', padding: 9, borderRadius: 8, background: 'var(--accent-glow)', border: '1px solid rgba(124,92,252,.3)', color: 'var(--accent)', fontFamily: 'inherit', fontSize: 12.5, cursor: 'pointer' }}>
-                💬 Ask AI Coach
-              </button>
-            </div>
-          </div>
+          {/* AIInsightsCard uses useAIInsights hook: HTTP on mount + Reverb live push */}
+          <AIInsightsCard />
 
           {/* Goals from real API */}
           <div className="ai-card">
             <div className="card-hd" style={{ padding: '12px 16px' }}>
               <div>
                 <div className="card-title" style={{ fontSize: 13 }}>Active Goals</div>
-                <div className="card-sub">/api/goals · Real data</div>
+                <div className="card-sub">/api/goals · goal.progress event</div>
               </div>
             </div>
             <div className="goals-list">

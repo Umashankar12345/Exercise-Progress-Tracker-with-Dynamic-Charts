@@ -1,5 +1,7 @@
 import React from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import useStore from '../store/useStore';
+import api from '../api/axios';
 
 const NAV = [
   { to: '/',         label: 'Dashboard',       icon: '⊞', group: 'Main' },
@@ -12,25 +14,28 @@ const NAV = [
   { to: '/report',   label: 'Monthly Report',   icon: '📊', group: 'Reports' },
   { to: '/settings', label: 'Settings',         icon: '⚙️', group: 'Reports' },
 ];
-
 const PAGE_TITLES = {
-  '/':         'Dashboard',
-  '/log':      'Log Workout',
-  '/charts':   'Progress Charts',
-  '/library':  'Exercise Library',
-  '/insights': 'AI Insights',
-  '/plan':     'Workout Plan',
-  '/profile':  'Profile & Goals',
-  '/report':   'Monthly Report',
-  '/settings': 'Settings',
+  '/': 'Dashboard', '/log': 'Log Workout', '/charts': 'Progress Charts',
+  '/library': 'Exercise Library', '/insights': 'AI Insights',
+  '/plan': 'AI Workout Plan', '/profile': 'Profile & Goals',
+  '/report': 'Monthly Report', '/settings': 'Settings',
 };
-
 const groups = ['Main', 'AI Features', 'Reports'];
 
 export default function Layout() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useStore();
+
   const title = PAGE_TITLES[pathname] ?? 'FitTrack AI';
   const today = new Date().toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'U';
+
+  const handleLogout = async () => {
+    try { await api.post('/auth/logout'); } catch (_) {}
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="app-layout">
@@ -64,11 +69,11 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="user-pill">
-            <div className="avatar">AR</div>
+          <div className="user-pill" onClick={handleLogout} title="Click to logout">
+            <div className="avatar">{initials}</div>
             <div className="user-info">
-              <div className="user-name">Arjun Rao</div>
-              <div className="user-plan">Pro Plan ✦</div>
+              <div className="user-name">{user?.name ?? 'User'}</div>
+              <div className="user-plan">Pro Plan · Logout ↗</div>
             </div>
           </div>
         </div>
@@ -85,7 +90,7 @@ export default function Layout() {
           </div>
           <div className="icon-btn">🔔<div className="notif-dot"></div></div>
           <div className="icon-btn">📤</div>
-          <button className="btn-log" onClick={() => window.location.href = '/log'}>
+          <button className="btn-log" onClick={() => navigate('/log')}>
             ⚡ New Session
           </button>
         </div>

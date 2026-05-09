@@ -1,54 +1,20 @@
 import { create } from 'zustand';
 
 const useStore = create((set) => ({
-  // User Profile State
-  user: {
-    id: 1,
-    name: 'John Doe',
-    targetWeight: 185,
-    goalDate: '2026-12-31',
-    prTracking: {
-      benchPress: 225,
-      squat: 315,
-      deadlift: 405,
-    }
-  },
-  
-  // Actions for User Profile
-  updateTargetWeight: (weight) => 
-    set((state) => ({ user: { ...state.user, targetWeight: weight } })),
-    
-  updatePR: (exercise, weight) =>
-    set((state) => ({
-      user: {
-        ...state.user,
-        prTracking: {
-          ...state.user.prTracking,
-          [exercise]: weight,
-        }
-      }
-    })),
+  user: JSON.parse(localStorage.getItem('auth_user') || 'null'),
+  token: localStorage.getItem('auth_token') || null,
 
-  // Active Workout Session State
-  activeWorkoutSession: null,
-  
-  // Actions for Workout Session
-  startWorkout: (workoutName) => 
-    set({ activeWorkoutSession: { name: workoutName, startTime: new Date().toISOString(), exercises: [] } }),
-    
-  endWorkout: () => 
-    set({ activeWorkoutSession: null }),
-    
-  addExerciseToSession: (exerciseData) =>
-    set((state) => {
-      if (!state.activeWorkoutSession) return state;
-      return {
-        activeWorkoutSession: {
-          ...state.activeWorkoutSession,
-          exercises: [...state.activeWorkoutSession.exercises, exerciseData]
-        }
-      };
-    })
+  setAuth: (user, token) => {
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('auth_user', JSON.stringify(user));
+    set({ user, token });
+  },
+
+  logout: () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    set({ user: null, token: null });
+  },
 }));
 
 export default useStore;

@@ -4,7 +4,7 @@ export const ChartCard = ({ title, data }) => {
             <h3>{title}</h3>
             <div className="chart-container">
                 {/* Chart integration (e.g., Recharts) will go here */}
-                <p>Chart Data Placeholder</p>
+                <p>Chart Data Place</p>
             </div>
         </div>
     );

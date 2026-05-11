@@ -13,11 +13,14 @@ class GoalProgress implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public readonly int    $userId,
-        public readonly int    $goalId,
-        public readonly float  $percentage,
-        public readonly bool   $isAchieved,
-        public readonly string $updatedAt
+        public readonly int     $userId,
+        public readonly int     $goalId,
+        public readonly float   $pct,           // 0.0 – 100.0
+        public readonly float   $currentKg,     // latest logged weight
+        public readonly float   $targetKg,      // goal target weight
+        public readonly string  $exerciseName,
+        public readonly string  $status,        // 'in_progress' | 'achieved' | 'at_risk' | 'overdue'
+        public readonly ?string $achievedAt     // ISO timestamp if just hit 100%, null otherwise
     ) {}
 
     public function broadcastOn(): array
@@ -27,16 +30,22 @@ class GoalProgress implements ShouldBroadcast
 
     public function broadcastAs(): string
     {
-        return 'goal.progress';
+        return 'goal.progress';   // React: .listen('.goal.progress', ...)
     }
 
+    /**
+     * Exact JSON the React progress bars receive.
+     */
     public function broadcastWith(): array
     {
         return [
-            'goal_id'    => $this->goalId,
-            'percentage' => $this->percentage,
-            'achieved'   => $this->isAchieved,
-            'updated_at' => $this->updatedAt,
+            'goal_id'       => $this->goalId,
+            'pct'           => $this->pct,
+            'current_kg'    => $this->currentKg,
+            'target_kg'     => $this->targetKg,
+            'exercise_name' => $this->exerciseName,
+            'status'        => $this->status,
+            'achieved_at'   => $this->achievedAt,
         ];
     }
 }

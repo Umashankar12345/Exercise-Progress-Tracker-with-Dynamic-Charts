@@ -2,47 +2,85 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreGoalRequest;
 use App\Models\Goal;
+use App\Services\GoalService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class GoalController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(private GoalService $goalService) {}
+
+    /**
+     * GET /api/goals
+     * Returns all active goals with live % — used on page load.
+     * After this, GoalProgress WebSocket events keep % up to date.
+     */
+    public function index(Request $request): JsonResponse
     {
-        $goals = $request->user()->goals->map(function ($goal) {
-            // Mock percentage calculation
-            $goal->percentage = $goal->target_weight ? min(100, rand(10, 90)) : 0; 
-            return $goal;
-        });
-        return response()->json($goals);
+        $goals = $this->goalService->allGoalsProgress($request->user()->id);
+
+        return response()->json([
+            'data' => $goals,
+        ]);
     }
 
-    public function store(Request $request)
+    /**
+     * POST /api/goals
+     * Create a new goal — validates exercise_id, target_kg and target_date.
+     */
+    public function store(StoreGoalRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'target_weight' => 'nullable|numeric',
-            'goal_date' => 'nullable|date',
-            'is_achieved' => 'boolean',
+        $goal = Goal::create([
+            'user_id'     => $request->user()->id,
+            'exercise_id' => $request->exercise_id,
+            'target_kg'   => $request->target_kg,
+            'target_date' => $request->target_date,
         ]);
 
-        $goal = $request->user()->goals()->create($validated);
-        return response()->json($goal, 201);
+        $progress = $this->goalService->calcPercent(
+            $goal->load('exercise'),
+            $request->user()->id
+        );
+
+        return response()->json(['data' => $progress], 201);
     }
 
-    public function show(Goal $goal)
+    /**
+     * GET /api/goals/{goal}
+     */
+    public function show(Goal $goal): JsonResponse
     {
         return response()->json($goal);
     }
 
-    public function update(Request $request, Goal $goal)
+    /**
+     * PUT /api/goals/{goal}
+     * Update target — recalculate progress immediately.
+     */
+    public function update(Request $request, Goal $goal): JsonResponse
     {
-        $goal->update($request->all());
-        return response()->json($goal);
+        $this->authorize('delete', $goal); // reuse ownership check
+        $goal->update($request->only(['target_kg', 'target_date']));
+
+        $progress = $this->goalService->calcPercent(
+            $goal->fresh()->load('exercise'),
+            $request->user()->id
+        );
+
+        return response()->json(['data' => $progress]);
     }
 
-    public function destroy(Goal $goal)
+    /**
+     * DELETE /api/goals/{goal}
+     * Remove a goal — policy ensures user owns it.
+     */
+    public function destroy(Goal $goal): JsonResponse
     {
+        $this->authorize('delete', $goal);
         $goal->delete();
-        return response()->json(null, 204);
+        return response()->json(['message' => 'Goal removed.']);
     }
 }

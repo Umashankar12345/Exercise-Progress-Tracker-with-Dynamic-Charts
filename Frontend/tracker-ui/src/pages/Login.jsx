@@ -24,10 +24,26 @@ export default function Login() {
         : { name, email, password };
 
       const { data } = await api.post(`/auth/${mode}`, payload);
-      setAuth(data.user, data.access_token);
+      // Backend returns access_token (Sanctum plain text token)
+      const token = data.access_token || data.token;
+      setAuth(data.user, token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      if (!err.response) {
+        // Network error – server unreachable
+        setError('Cannot reach server. Make sure the backend is running on http://127.0.0.1:8000');
+      } else if (err.response.status === 422) {
+        // Validation errors
+        const errors = err.response.data?.errors;
+        if (errors) {
+          const firstMsg = Object.values(errors).flat()[0];
+          setError(firstMsg);
+        } else {
+          setError(err.response.data?.message || 'Validation failed.');
+        }
+      } else {
+        setError(err.response?.data?.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

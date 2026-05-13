@@ -10,11 +10,20 @@ return new class extends Migration
     {
         Schema::create('goals', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->decimal('target_weight', 8, 2)->nullable();
-            $table->date('goal_date')->nullable();
-            $table->boolean('is_achieved')->default(false);
+            $table->foreignId('user_id')
+                  ->constrained()->cascadeOnDelete();
+            $table->foreignId('exercise_id')
+                  ->constrained()->cascadeOnDelete();
+            $table->decimal('target_kg',   6, 2);
+            $table->date('target_date');
+            $table->timestamp('achieved_at')->nullable();  // null = not yet achieved
             $table->timestamps();
+
+            // One goal per exercise per user — no duplicate goals
+            $table->unique(['user_id', 'exercise_id']);
+
+            // Fast lookup in GoalService::goalsForWorkout()
+            $table->index(['user_id', 'exercise_id']);
         });
     }
 

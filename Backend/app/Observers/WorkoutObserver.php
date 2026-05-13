@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 
 class WorkoutObserver
 {
+    public function __construct(private \App\Services\GoalService $goalService) {}
+
     /**
      * Called automatically after every Workout::create().
      * Fires 4 events immediately + dispatches AI job to queue.
@@ -48,18 +50,30 @@ class WorkoutObserver
             imbalanceWarning: 'Push/pull imbalance detected'
         );
 
-        // ── Event 4: goal.progress (all active goals) ─────────────────
-        $goals = $workout->user->goals ?? collect();
+        // ── Event 4: goal.progress (relevant goals only) ──────────────
+        // Get IDs of all exercises logged in this workout
+        $exerciseIds = $workout->workoutExercises
+            ->pluck('exercise_id')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Only check goals relevant to this workout's exercises
+        // Avoids touching bench press goal when user only did legs
+        $goals = $this->goalService->goalsForWorkout($userId, $exerciseIds);
+
         foreach ($goals as $goal) {
-            $pct = $goal->target_weight
-                ? min(100, rand(60, 95))   // replace with real calc in production
-                : 0;
+            $result = $this->goalService->calcPercent($goal, $userId);
+
             GoalProgress::dispatch(
-                userId:     $userId,
-                goalId:     $goal->id,
-                percentage: $pct,
-                isAchieved: $pct >= 100,
-                updatedAt:  now()->toISOString()
+                userId:       $userId,
+                goalId:       $result['goal_id'],
+                pct:          $result['pct'],
+                currentKg:    $result['current_kg'],
+                targetKg:     $result['target_kg'],
+                exerciseName: $result['exercise_name'],
+                status:       $result['status'],
+                achievedAt:   $result['achieved_at']
             );
         }
 

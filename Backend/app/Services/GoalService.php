@@ -38,7 +38,7 @@ class GoalService
             'goal_id'       => $goal->id,
             'pct'           => $pct,
             'current_kg'    => $currentKg,
-            'target_kg'     => (float) $goal->target_kg,
+            'target_kg'     => $goal->target_kg,
             'exercise_name' => $goal->exercise->name ?? 'Unknown',
             'status'        => $status,
             'achieved_at'   => $achievedAt,
@@ -54,7 +54,7 @@ class GoalService
         return Goal::with('exercise')
             ->where(function ($q) use ($userId) {
                 $q->where('user_id', $userId)
-                  ->whereNull('achieved_at');           // active goals
+                  ->whereNull('achieved_at');          // only active goals
             })
             ->orWhere(function ($q) use ($userId) {
                 // include recently achieved (last 7 days) for celebration UI
@@ -68,9 +68,6 @@ class GoalService
     /**
      * Find only goals that are relevant to the exercises
      * just logged in this workout — avoids recalculating every goal.
-     *
-     * Performance: user does leg day → only squat/leg press goals recalculated.
-     * Bench press goal is never touched. Sub-millisecond overhead.
      */
     public function goalsForWorkout(int $userId, array $exerciseIds): Collection
     {
@@ -87,7 +84,7 @@ class GoalService
 
     /**
      * Best weight the user has ever lifted for this exercise.
-     * WorkoutSet uses workout_exercise_id → WorkoutExercise → exercise_id.
+     * This is the "current" value compared against the goal target.
      */
     private function bestWeight(int $userId, int $exerciseId): float
     {
@@ -111,7 +108,7 @@ class GoalService
             return 'achieved';
         }
 
-        if (! $goal->target_date) {
+        if (!$goal->target_date) {
             return 'in_progress';
         }
 

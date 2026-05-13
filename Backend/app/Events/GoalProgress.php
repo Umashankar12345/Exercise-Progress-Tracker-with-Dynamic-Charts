@@ -13,14 +13,14 @@ class GoalProgress implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
-        public readonly int     $userId,
-        public readonly int     $goalId,
-        public readonly float   $pct,           // 0.0 – 100.0
-        public readonly float   $currentKg,     // latest logged weight
-        public readonly float   $targetKg,      // goal target weight
-        public readonly string  $exerciseName,
-        public readonly string  $status,        // 'in_progress' | 'achieved' | 'at_risk' | 'overdue'
-        public readonly ?string $achievedAt     // ISO timestamp if just hit 100%, null otherwise
+        public readonly int    $userId,
+        public readonly int    $goalId,
+        public readonly float  $pct,           // 0.0 – 100.0
+        public readonly float  $currentKg,     // latest logged weight
+        public readonly float  $targetKg,      // goal target weight
+        public readonly string $exerciseName,
+        public readonly string $status,        // 'in_progress' | 'achieved' | 'overdue'
+        public readonly ?string $achievedAt    // ISO timestamp if just hit 100%
     ) {}
 
     public function broadcastOn(): array

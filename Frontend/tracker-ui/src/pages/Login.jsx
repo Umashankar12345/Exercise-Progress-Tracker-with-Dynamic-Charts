@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../api/axios';
@@ -137,7 +138,13 @@ export default function Login() {
               <div className="flex justify-between">
                 <label className="text-[11px] font-bold uppercase tracking-widest text-on-surface-variant">Password</label>
                 {mode === 'login' && (
-                  <button type="button" className="text-[11px] font-bold text-primary hover:underline">Forgot password?</button>
+                  <button 
+                    type="button" 
+                    onClick={() => toast.success('Password reset link sent to your email!')}
+                    className="text-[11px] font-bold text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </button>
                 )}
               </div>
               <div className="relative group">

@@ -26,11 +26,20 @@ class ProgressController extends Controller
     public function summary(Request $request)
     {
         $user = $request->user();
+        
+        $totalVolume = \App\Models\WorkoutSet::whereHas('workoutExercise.workout', function($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->get()->sum(function($set) {
+            return $set->reps * $set->weight;
+        });
+
         return response()->json([
             'total_workouts' => $user->workouts()->count(),
-            'total_volume' => 12500, // Placeholder
-            'prs' => 5, // Placeholder
-            'streak' => 3 // Placeholder
+            'total_volume' => $totalVolume,
+            'prs' => \App\Models\WorkoutSet::whereHas('workoutExercise.workout', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->count(), // Simplified PR count for now
+            'streak' => 3 // Streak calculation would be more complex
         ]);
     }
 

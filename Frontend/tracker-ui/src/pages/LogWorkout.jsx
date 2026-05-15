@@ -1,4 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { 
+  Dumbbell, 
+  Plus, 
+  Trash2, 
+  Save, 
+  Zap, 
+  CheckCircle2, 
+  Info,
+  ChevronRight,
+  Target,
+  History,
+  Activity,
+  Loader2
+} from 'lucide-react';
 import api from '../api/axios';
 import AIInsightsCard from '../components/AIInsightsCard';
 
@@ -11,12 +25,10 @@ const EXERCISES = {
   Core:      ['Plank', 'Cable Crunch', 'Leg Raise'],
 };
 
-const GOAL_COLORS = ['var(--green)', 'var(--orange)', 'var(--accent)', 'var(--blue)'];
-let nextId = 4;
 const defaultSets = [
-  { id: 1, reps: 10, weight: 135 },
-  { id: 2, reps: 10, weight: 135 },
-  { id: 3, reps: 8,  weight: 145 },
+  { id: 1, reps: 10, weight: 60 },
+  { id: 2, reps: 10, weight: 60 },
+  { id: 3, reps: 8,  weight: 65 },
 ];
 
 export default function LogWorkout() {
@@ -26,6 +38,7 @@ export default function LogWorkout() {
   const [status, setStatus]     = useState(null);
   const [msg, setMsg]           = useState('');
   const [goals, setGoals]       = useState([]);
+  const [loading, setLoading]   = useState(false);
 
   useEffect(() => {
     api.get('/goals').then(r => setGoals(r.data)).catch(() => {});
@@ -33,14 +46,27 @@ export default function LogWorkout() {
 
   const updateSet = (id, field, val) =>
     setSets(prev => prev.map(s => s.id === id ? { ...s, [field]: Number(val) } : s));
-  const addSet = () =>
-    setSets(prev => [...prev, { id: nextId++, reps: 10, weight: prev.at(-1)?.weight ?? 135 }]);
+  
+  const addSet = () => {
+    const lastSet = sets[sets.length - 1];
+    setSets(prev => [...prev, { 
+      id: Date.now(), 
+      reps: lastSet?.reps ?? 10, 
+      weight: lastSet?.weight ?? 60 
+    }]);
+  };
+
   const delSet = (id) =>
     setSets(prev => prev.length > 1 ? prev.filter(s => s.id !== id) : prev);
 
   const handleSubmit = async () => {
-    if (!exercise) { setStatus('error'); setMsg('Please select an exercise first.'); return; }
-    setStatus('loading');
+    if (!exercise) { 
+      setStatus('error'); 
+      setMsg('Please select an exercise before logging.'); 
+      return; 
+    }
+    setLoading(true);
+    setStatus(null);
     setMsg('');
     try {
       await api.post('/workouts', {
@@ -51,167 +77,240 @@ export default function LogWorkout() {
         sets: sets.map(s => ({ reps: s.reps, weight: s.weight })),
       });
       setStatus('success');
-      setMsg(`✅ "${exercise}" saved! WorkoutObserver fired 5 events → AI job dispatched to queue.`);
-      setSets(defaultSets); setExercise(''); setNotes('');
-      setTimeout(() => { setStatus(null); setMsg(''); }, 6000);
+      setMsg(`Workout saved successfully! AI Insights are being generated.`);
+      setSets(defaultSets); 
+      setExercise(''); 
+      setNotes('');
+      setTimeout(() => { setStatus(null); setMsg(''); }, 5000);
     } catch (err) {
       setStatus('error');
-      setMsg(err.response?.data?.message || 'Failed to save. Is Laravel running on :8000?');
+      setMsg(err.response?.data?.message || 'Failed to save workout. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      {/* API status bar */}
-      <div className="ws-bar">
-        <div className="live-dot" style={{ width: 8, height: 8 }}></div>
-        <span className="ws-green">API connected</span>
-        <span style={{ color: 'var(--text3)' }}>·</span>
-        <span>POST /api/workouts → WorkoutObserver → 5 events broadcast</span>
-        <div className="ws-events">
-          {['workout.saved','pr.achieved','streak.updated','insight.ready','goal.progress'].map(e => (
-            <span key={e} className="ws-evt">{e}</span>
+    <div className="flex flex-col gap-8">
+      {/* Real-time Tracking Header */}
+      <div className="flex items-center justify-between p-4 rounded-xl bg-surface-container border border-outline-variant">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center">
+            <Activity className="w-5 h-5 text-secondary animate-pulse" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-on-surface uppercase tracking-widest">Active Session Tracking</h2>
+            <p className="text-[10px] text-on-surface-variant font-medium">Real-time WebSocket event listeners active</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {['workout.saved', 'pr.achieved', 'goal.progress'].map(evt => (
+            <div key={evt} className="px-2.5 py-1 bg-surface-bright border border-outline-variant rounded-md text-[9px] font-black text-on-surface-variant uppercase tracking-tighter">
+              {evt}
+            </div>
           ))}
         </div>
       </div>
 
-      {msg && <div className={status === 'success' ? 'alert-success' : 'alert-error'}>{msg}</div>}
+      {msg && (
+        <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in slide-in-from-top duration-300 ${
+          status === 'success' ? 'bg-secondary/10 border-secondary/20 text-secondary' : 'bg-red-500/10 border-red-500/20 text-red-400'
+        }`}>
+          {status === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <Info className="w-5 h-5" />}
+          <span className="text-sm font-bold">{msg}</span>
+        </div>
+      )}
 
-      <div className="sec-head">
-        <div className="sec-label">Log Your Session</div>
-        <div className="sec-line"></div>
-        <div className="sec-tag">POST /api/workouts → WorkoutObserver → InsightReady broadcast</div>
-      </div>
-
-      <div className="content-grid">
-        {/* ── FORM ── */}
-        <div className="card">
-          <div className="card-hd">
-            <div>
-              <div className="card-title">Record your session</div>
-              <div className="card-sub">Saved to DB → AI job dispatched → InsightReady broadcast via Reverb</div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Main Logging Form */}
+        <div className="xl:col-span-2 space-y-6">
+          <div className="glass-card">
+            <div className="p-6 border-b border-outline-variant flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
+              <div className="flex items-center gap-3">
+                <Dumbbell className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-bold text-on-surface tracking-tight">Record Workout</h3>
+                  <p className="text-xs text-on-surface-variant font-medium">Detailed set logging with instant PR detection</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-surface-bright rounded-full border border-outline-variant">
+                <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
+                <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">LIVE DB</span>
+              </div>
             </div>
-            <div className="live-indicator"><div className="live-dot"></div>Laravel ready</div>
-          </div>
-          <div className="card-body">
-            <div className="form-section">
 
-              <div className="field">
-                <label>Exercise</label>
-                <select value={exercise} onChange={e => setExercise(e.target.value)}>
-                  <option value="" disabled>Select an exercise…</option>
-                  {Object.entries(EXERCISES).map(([group, items]) => (
-                    <optgroup key={group} label={group}>
-                      {items.map(ex => <option key={ex}>{ex}</option>)}
-                    </optgroup>
-                  ))}
-                </select>
+            <div className="p-8 space-y-8">
+              {/* Exercise Selector */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Selected Exercise</label>
+                <div className="relative group">
+                  <select 
+                    value={exercise} 
+                    onChange={e => setExercise(e.target.value)}
+                    className="w-full bg-surface-container border border-outline-variant rounded-xl py-4 pl-4 pr-10 text-on-surface font-bold focus:outline-none focus:border-primary transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="" disabled>Choose exercise...</option>
+                    {Object.entries(EXERCISES).map(([group, items]) => (
+                      <optgroup key={group} label={group} className="bg-surface font-bold text-primary">
+                        {items.map(ex => <option key={ex} value={ex} className="text-on-surface">{ex}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant group-focus-within:rotate-90 transition-transform pointer-events-none" />
+                </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.5px', textTransform: 'uppercase', color: 'var(--text2)' }}>Sets</span>
-                <span style={{ fontSize: 11, color: 'var(--text3)' }}>Weight in lbs · tap to edit</span>
-              </div>
+              {/* Set Logging Table */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Set Progression</h4>
+                  <button 
+                    onClick={addSet}
+                    className="flex items-center gap-1.5 text-[10px] font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-widest"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Add New Set
+                  </button>
+                </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr 36px', gap: 8, padding: '0 12px' }}>
-                {['#', 'Reps', 'Weight', 'Vol (lbs)', ''].map((h, i) => (
-                  <span key={i} style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'center' }}>{h}</span>
-                ))}
-              </div>
+                <div className="space-y-3">
+                  {/* Header */}
+                  <div className="grid grid-cols-[40px_1fr_1fr_1fr_40px] gap-4 px-4 text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">
+                    <span className="text-center">Set</span>
+                    <span className="text-center">Reps</span>
+                    <span className="text-center">Weight (kg)</span>
+                    <span className="text-center">Volume</span>
+                    <span></span>
+                  </div>
 
-              <div className="set-rows">
-                {sets.map((s, idx) => {
-                  const vol = s.reps * s.weight;
-                  const isLast = idx === sets.length - 1;
-                  return (
-                    <div key={s.id} className={`set-row${isLast ? ' last-set' : ''}`}>
-                      <div className="set-num">{idx + 1}</div>
-                      <div>
-                        <div className="set-label">Reps</div>
-                        <input className="set-input" type="number" min={1} value={s.reps}
-                          onChange={e => updateSet(s.id, 'reps', e.target.value)} />
+                  {/* Rows */}
+                  {sets.map((s, idx) => (
+                    <div 
+                      key={s.id} 
+                      className={`grid grid-cols-[40px_1fr_1fr_1fr_40px] gap-4 items-center p-3 rounded-xl border border-outline-variant bg-surface-container transition-all hover:border-outline ${
+                        idx === sets.length - 1 ? 'ring-1 ring-primary/20 bg-primary/5 border-primary/20' : ''
+                      }`}
+                    >
+                      <div className="text-center text-xs font-black text-on-surface-variant">{idx + 1}</div>
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <label htmlFor={`reps-${s.id}`} className="sr-only">Reps</label>
+                        <input 
+                          id={`reps-${s.id}`}
+                          type="number" 
+                          value={s.reps}
+                          onChange={e => updateSet(s.id, 'reps', e.target.value)}
+                          className="bg-surface-bright border border-outline-variant rounded-lg py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:border-primary"
+                        />
                       </div>
-                      <div>
-                        <div className="set-label">lbs</div>
-                        <input className="set-input" type="number" min={0} value={s.weight}
-                          style={s.weight > 140 ? { color: 'var(--orange)' } : {}}
-                          onChange={e => updateSet(s.id, 'weight', e.target.value)} />
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <label htmlFor={`weight-${s.id}`} className="sr-only">Weight</label>
+                        <input 
+                          id={`weight-${s.id}`}
+                          type="number" 
+                          value={s.weight}
+                          onChange={e => updateSet(s.id, 'weight', e.target.value)}
+                          className={`bg-surface-bright border border-outline-variant rounded-lg py-2 text-center text-sm font-bold focus:outline-none focus:border-primary ${
+                            s.weight > 100 ? 'text-tertiary' : 'text-on-surface'
+                          }`}
+                        />
                       </div>
-                      <div>
-                        <div className="set-label">Vol</div>
-                        <input className="set-input" type="number" value={vol} readOnly
-                          style={{ color: 'var(--text2)' }} />
+                      <div className="text-center text-sm font-black text-on-surface-variant">
+                        {(s.reps * s.weight).toLocaleString()}
                       </div>
-                      <div className="set-del" onClick={() => delSet(s.id)}>✕</div>
+                      <button 
+                        onClick={() => delSet(s.id)}
+                        className="flex items-center justify-center text-on-surface-variant hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  );
-                })}
-                <button className="add-set-btn" onClick={addSet}>＋ Add Set</button>
+                  ))}
+                </div>
               </div>
 
-              <div className="field">
-                <label>Session Notes (optional)</label>
-                <input type="text" placeholder="e.g. Felt strong today, good pump…"
-                  value={notes} onChange={e => setNotes(e.target.value)} />
+              {/* Notes */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Session Notes</label>
+                <textarea 
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="How did it feel? (e.g. Explosive reps, felt heavy today...)"
+                  className="w-full bg-surface-container border border-outline-variant rounded-xl p-4 text-sm text-on-surface font-medium focus:outline-none focus:border-primary transition-all min-h-[100px] resize-none"
+                />
               </div>
 
-              <div style={{ background: 'var(--s2)', border: '1px solid var(--border)', borderRadius: 9, padding: '10px 12px', fontSize: 11.5, color: 'var(--text2)', lineHeight: 1.7 }}>
-                <div style={{ color: 'var(--text)', fontWeight: 500, marginBottom: 4, fontSize: 12 }}>⚡ On submit, WorkoutObserver fires:</div>
-                <span style={{ color: 'var(--green)' }}>workout.saved</span> · <span style={{ color: 'var(--orange)' }}>streak.updated</span> · <span style={{ color: 'var(--blue)' }}>muscle.balance.updated</span> · <span style={{ color: 'var(--yellow)' }}>goal.progress</span> → then <span style={{ color: 'var(--accent)' }}>AnalyzeWorkoutJob</span> dispatched → <span style={{ color: 'var(--green)' }}>insight.ready</span> broadcast
-              </div>
-
-              <button className="btn-submit" onClick={handleSubmit} disabled={status === 'loading'}>
-                {status === 'loading'
-                  ? <><div className="spinner"></div> Saving to Laravel DB…</>
-                  : '⚡ Log Exercise & Trigger 5 WebSocket Events'}
+              {/* Submit Button */}
+              <button 
+                id="submit-workout-button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-black shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5" fill="white" />
+                    SUBMIT WORKOUT DATA
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── AI PANEL — real hook + Reverb WebSocket ── */}
-        <div className="ai-panel">
-          {/* AIInsightsCard uses useAIInsights hook: HTTP on mount + Reverb live push */}
+        {/* Sidebar Widgets */}
+        <div className="space-y-8">
           <AIInsightsCard />
 
-          {/* Goals from real API */}
-          <div className="ai-card">
-            <div className="card-hd" style={{ padding: '12px 16px' }}>
-              <div>
-                <div className="card-title" style={{ fontSize: 13 }}>Active Goals</div>
-                <div className="card-sub">/api/goals · goal.progress event</div>
+          {/* Goal Progress Widget */}
+          <div className="glass-card overflow-hidden">
+            <div className="p-4 border-b border-outline-variant flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-tertiary" />
+                <h4 className="text-xs font-black text-on-surface uppercase tracking-widest">Active Goals</h4>
               </div>
+              <History className="w-4 h-4 text-on-surface-variant" />
             </div>
-            <div className="goals-list">
-              {goals.length === 0
-                ? (
-                  <div style={{ padding: '12px 4px', color: 'var(--text3)', fontSize: 12.5 }}>
-                    No goals yet.{' '}
-                    <a href="/profile" style={{ color: 'var(--accent)' }}>Set a goal →</a>
-                  </div>
-                )
-                : goals.map((g, i) => {
-                  const pct = g.percentage ?? 0;
-                  return (
-                    <div key={g.id} className="goal-item">
-                      <div className="goal-meta">
-                        <span className="goal-name">🎯 {g.target_weight ? `Target: ${g.target_weight} kg` : 'Goal'}</span>
-                        <span className="goal-pct" style={{ color: GOAL_COLORS[i % GOAL_COLORS.length] }}>{pct}%</span>
+            <div className="p-4 space-y-6">
+              {(!Array.isArray(goals) || goals.length === 0) ? (
+                <p className="text-xs text-on-surface-variant text-center py-4 italic">No active goals found.</p>
+              ) : (
+                goals.map(g => (
+                  <div key={g.id} className="space-y-3">
+                    <div className="flex justify-between items-end">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Weight Goal</span>
+                        <span className="text-sm font-bold text-on-surface">{g.target_weight} kg</span>
                       </div>
-                      <div className="pbar">
-                        <div className="pfill" style={{ width: `${pct}%`, background: GOAL_COLORS[i % GOAL_COLORS.length] }}></div>
-                      </div>
-                      <div className="goal-dates">
-                        <span>Target: {g.target_weight} kg</span>
-                        <span>{g.goal_date ?? '—'}</span>
-                      </div>
+                      <span className="text-lg font-black text-secondary">{g.percentage}%</span>
                     </div>
-                  );
-                })}
+                    <div className="h-2 w-full bg-surface-bright rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-secondary rounded-full transition-all duration-1000" 
+                        style={{ width: `${g.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-gradient-to-br from-secondary/10 to-transparent border border-secondary/20 space-y-4">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-secondary" />
+              <span className="text-[10px] font-black text-secondary uppercase tracking-widest">System Architecture</span>
+            </div>
+            <p className="text-[11px] text-on-surface-variant font-bold leading-relaxed">
+              Submitting this workout triggers the <span className="text-on-surface">WorkoutObserver</span>. 
+              The backend dispatches an async <span className="text-on-surface">AnalyzeWorkoutJob</span> 
+              which uses <span className="text-on-surface">Claude AI</span> to update your insights via 
+              <span className="text-secondary"> Laravel Reverb</span> WebSockets.
+            </p>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

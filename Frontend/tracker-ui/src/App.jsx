@@ -8,16 +8,11 @@ import ProgressCharts from './pages/ProgressCharts';
 import ExerciseLibrary from './pages/ExerciseLibrary';
 import AIInsights from './pages/AIInsights';
 import Profile from './pages/Profile';
+import Plan from './pages/Plan';
+import Report from './pages/Report';
+import Settings from './pages/Settings';
 import useStore from './store/useStore';
 import './index.css';
-
-const Placeholder = ({ title }) => (
-  <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text2)' }}>
-    <div style={{ fontSize: 48, marginBottom: 16 }}>🚧</div>
-    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{title}</div>
-    <div style={{ marginTop: 8, fontSize: 13 }}>Backend endpoint ready · Frontend coming soon.</div>
-  </div>
-);
 
 // Protected route wrapper
 function PrivateRoute({ children }) {
@@ -35,14 +30,15 @@ function App() {
         {/* Protected */}
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route index           element={<Dashboard />} />
+          <Route path="dashboard" element={<Navigate to="/" replace />} />
           <Route path="log"      element={<LogWorkout />} />
           <Route path="charts"   element={<ProgressCharts />} />
           <Route path="library"  element={<ExerciseLibrary />} />
           <Route path="insights" element={<AIInsights />} />
           <Route path="profile"  element={<Profile />} />
-          <Route path="plan"     element={<Placeholder title="AI Workout Plan" />} />
-          <Route path="report"   element={<Placeholder title="Monthly Report" />} />
-          <Route path="settings" element={<Placeholder title="Settings" />} />
+          <Route path="plan"     element={<Plan />} />
+          <Route path="report"   element={<Report />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </Router>

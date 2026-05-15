@@ -19,13 +19,44 @@ class WorkoutController extends Controller
             'started_at' => 'required|date',
             'ended_at' => 'nullable|date',
             'notes' => 'nullable|string',
+            'sets' => 'nullable|array',
+            'sets.*.reps' => 'required|integer',
+            'sets.*.weight' => 'required|numeric',
         ]);
 
-        $workout = $request->user()->workouts()->create($validated);
+        $workout = $request->user()->workouts()->create([
+            'name' => $validated['name'],
+            'started_at' => $validated['started_at'],
+            'ended_at' => $validated['ended_at'],
+            'notes' => $validated['notes'],
+        ]);
+
+        // Find or create Exercise to get an ID
+        $exerciseModel = \App\Models\Exercise::firstOrCreate(
+            ['name' => $validated['name']],
+            ['muscle_group' => 'Unknown'] // Default group if new
+        );
+
+        // Create the WorkoutExercise junction record
+        $workoutEx = $workout->workoutExercises()->create([
+            'exercise_id' => $exerciseModel->id,
+            'notes' => $validated['notes'],
+        ]);
+
+        // Create the individual Sets
+        if (!empty($validated['sets'])) {
+            foreach ($validated['sets'] as $setData) {
+                $workoutEx->workoutSets()->create([
+                    'reps' => $setData['reps'],
+                    'weight' => $setData['weight'],
+                ]);
+            }
+        }
         
-        \App\Jobs\AnalyzeWorkoutJob::dispatch($workout);
+        // Pass userId (int) as expected by the job constructor
+        \App\Jobs\AnalyzeWorkoutJob::dispatch($request->user()->id);
         
-        return response()->json($workout, 201);
+        return response()->json($workout->load('workoutExercises.workoutSets'), 201);
     }
 
     public function show(Workout $workout)

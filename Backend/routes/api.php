@@ -13,6 +13,10 @@ use App\Http\Controllers\Api\ProgressPhotoController;
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\UserController;
 
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated.'], 401);
+})->name('login');
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -41,5 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/progress', [ProgressController::class, 'index']);
     Route::post('/progress/{snapshot}/photo', [ProgressPhotoController::class, 'store']);
     Route::get('/ai/insights', [AIController::class, 'insights']);
+    Route::post('/ai/chat', [AIController::class, 'chat']);
     Route::get('/workouts/{workout}/export', [ExportController::class, 'exportWorkout']);
 });

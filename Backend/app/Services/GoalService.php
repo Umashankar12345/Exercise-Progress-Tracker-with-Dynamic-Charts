@@ -42,6 +42,8 @@ class GoalService
             'exercise_name' => $goal->exercise->name ?? 'Unknown',
             'status'        => $status,
             'achieved_at'   => $achievedAt,
+            'target_date'   => $goal->target_date,
+            'created_at'    => $goal->created_at->toISOString(),
         ];
     }
 

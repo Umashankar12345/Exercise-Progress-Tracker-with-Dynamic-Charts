@@ -1,0 +1,4 @@
+Stitch_Assets/
+**/stitch/
+Frontend/tracker-ui/.env
+Backend/.env

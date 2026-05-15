@@ -41,7 +41,7 @@ export default function LogWorkout() {
   const [loading, setLoading]   = useState(false);
 
   useEffect(() => {
-    api.get('/goals').then(r => setGoals(r.data)).catch(() => {});
+    api.get('/goals').then(r => setGoals(r.data.data || [])).catch(() => {});
   }, []);
 
   const updateSet = (id, field, val) =>

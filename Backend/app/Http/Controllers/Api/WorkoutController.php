@@ -19,9 +19,9 @@ class WorkoutController extends Controller
             'started_at' => 'required|date',
             'ended_at' => 'nullable|date',
             'notes' => 'nullable|string',
-            'sets' => 'nullable|array',
-            'sets.*.reps' => 'required|integer',
-            'sets.*.weight' => 'required|numeric',
+            'sets' => 'required|array|min:1',
+            'sets.*.reps' => 'required|integer|min:1',
+            'sets.*.weight' => 'required|numeric|min:0',
         ]);
 
         $workout = $request->user()->workouts()->create([
@@ -45,10 +45,11 @@ class WorkoutController extends Controller
 
         // Create the individual Sets
         if (!empty($validated['sets'])) {
-            foreach ($validated['sets'] as $setData) {
+            foreach ($validated['sets'] as $index => $setData) {
                 $workoutEx->workoutSets()->create([
                     'reps' => $setData['reps'],
                     'weight' => $setData['weight'],
+                    'order' => $index + 1,
                 ]);
             }
         }

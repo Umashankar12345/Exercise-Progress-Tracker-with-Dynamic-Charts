@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Zap,
+  Heart,
   X
 } from 'lucide-react';
 import useStore from '../store/useStore';
@@ -25,6 +26,7 @@ const NAV_GROUPS = [
       { to: '/log', label: 'Log Workout', icon: ClipboardList },
       { to: '/charts', label: 'Progress Charts', icon: LineChart },
       { to: '/library', label: 'Exercise Library', icon: Dumbbell },
+      { to: '/health', label: 'Health & BMI', icon: Heart },
     ]
   },
   {

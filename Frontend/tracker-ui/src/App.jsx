@@ -12,6 +12,7 @@ import Profile from './pages/Profile';
 import Plan from './pages/Plan';
 import Report from './pages/Report';
 import Settings from './pages/Settings';
+import Health from './pages/Health';
 import useStore from './store/useStore';
 import './index.css';
 
@@ -40,6 +41,7 @@ function App() {
           <Route path="profile"  element={<Profile />} />
           <Route path="plan"     element={<Plan />} />
           <Route path="report"   element={<Report />} />
+          <Route path="health"   element={<Health />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

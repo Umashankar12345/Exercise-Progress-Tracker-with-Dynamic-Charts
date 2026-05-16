@@ -211,8 +211,6 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
         </div>
-
-        </div>
         
         {/* Step Tracking Chart */}
         <div className="xl:col-span-1">

@@ -25,6 +25,7 @@ import {
   Area
 } from 'recharts';
 import api from '../api/axios';
+import { StepChart } from '../components/StepChart';
 import { useAIInsights } from '../hooks/useAIInsights';
 import useStore from '../store/useStore';
 
@@ -67,19 +68,22 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [prs, setPrs]         = useState([]);
   const [muscles, setMuscles] = useState([]);
+  const [steps, setSteps]     = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, p, m] = await Promise.all([
+        const [s, p, m, st] = await Promise.all([
           api.get('/progress/summary'),
           api.get('/prs'),
           api.get('/progress/muscles'),
+          api.get('/daily-steps'),
         ]);
         setSummary(s.data);
         setPrs(p.data);
         setMuscles(m.data);
+        setSteps(st.data);
       } catch (e) {
         console.error('Dashboard fetch error', e);
       } finally {
@@ -158,7 +162,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         
         {/* Weekly Volume Chart */}
-        <div className="xl:col-span-2 glass-card flex flex-col">
+        <div className="xl:col-span-1 glass-card flex flex-col">
           <div className="p-6 border-b border-outline-variant flex items-center justify-between">
             <div className="flex flex-col">
               <h3 className="text-lg font-bold text-on-surface tracking-tight">Performance Volume</h3>
@@ -206,6 +210,13 @@ export default function Dashboard() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
+        </div>
+
+        </div>
+        
+        {/* Step Tracking Chart */}
+        <div className="xl:col-span-1">
+          <StepChart data={steps} />
         </div>
 
         {/* Right Sidebar Column */}

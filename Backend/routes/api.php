@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\ProgressPhotoController;
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\DailyStepController;
 
 Route::get('/login', function () {
     return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -32,6 +33,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('sets', WorkoutSetController::class);
     Route::apiResource('goals', GoalController::class);
     
+    // Step Tracking
+    Route::get('/daily-steps', [DailyStepController::class, 'index']);
+    Route::post('/daily-steps', [DailyStepController::class, 'store']);
+
     Route::get('/user/streak', [UserController::class, 'streak']);
     Route::get('/prs', [WorkoutController::class, 'prs']);
 

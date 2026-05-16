@@ -15,6 +15,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'avatar_url',
     ];
 
     protected $hidden = [
@@ -43,5 +45,10 @@ class User extends Authenticatable
     public function goals()
     {
         return $this->hasMany(Goal::class);
+    }
+
+    public function dailySteps()
+    {
+        return $this->hasMany(DailyStep::class);
     }
 }

@@ -24,7 +24,7 @@ export default function Plan() {
           </div>
           <div className="flex-1 space-y-2 text-center md:text-left">
             <h1 className="text-3xl font-black text-on-surface tracking-tighter uppercase">AI Adaptive Training Plan</h1>
-            <p className="text-on-surface-variant font-medium text-lg">Your plan has been optimized by Claude 3.5 based on your last 12 sessions.</p>
+            <p className="text-on-surface-variant font-medium text-lg">Your plan has been optimized by Gemini 1.5 based on your last 12 sessions.</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
               <div className="flex items-center gap-1.5 text-[10px] font-black text-secondary uppercase tracking-widest px-3 py-1 bg-secondary/10 rounded-full border border-secondary/20">
                 ADAPTIVE MODE ON

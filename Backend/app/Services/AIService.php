@@ -12,7 +12,7 @@ class AIService
 
     public function __construct()
     {
-        $this->apiKey = config('services.anthropic.key', env('ANTHROPIC_API_KEY', ''));
+        $this->apiKey = config('services.gemini.key', env('GEMINI_API_KEY', ''));
     }
 
     public function analyzeProgress(array $workoutHistory): ?array
@@ -22,29 +22,39 @@ class AIService
         }
 
         try {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+
             $response = Http::withHeaders([
-                'x-api-key'         => $this->apiKey,
-                'anthropic-version' => '2023-06-01',
-                'content-type'      => 'application/json',
-            ])->timeout(55)->post('https://api.anthropic.com/v1/messages', [
-                'model'      => 'claude-3-haiku-20240307',
-                'max_tokens' => 800,
-                'system'     => $this->systemPrompt(),
-                'messages'   => [
-                    ['role' => 'user', 'content' => $this->buildPrompt($workoutHistory)],
+                'Content-Type' => 'application/json',
+            ])->timeout(55)->post($url, [
+                'systemInstruction' => [
+                    'parts' => [
+                        ['text' => $this->systemPrompt()]
+                    ]
                 ],
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => $this->buildPrompt($workoutHistory)]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'responseMimeType' => 'application/json',
+                ]
             ]);
 
             if (!$response->successful()) {
                 return $this->fallbackInsights();
             }
 
-            $text = $response->json('content.0.text', '{}');
-            $text = preg_replace('/```json|```/', '', $text);
+            $text = $response->json('candidates.0.content.parts.0.text', '{}');
             $data = json_decode(trim($text), true);
 
             return is_array($data) ? $data : $this->fallbackInsights();
         } catch (\Exception $e) {
+            Log::error('Gemini API Error: ' . $e->getMessage());
             return $this->fallbackInsights();
         }
     }
@@ -56,21 +66,33 @@ class AIService
         }
 
         try {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+
             $response = Http::withHeaders([
-                'x-api-key'         => $this->apiKey,
-                'anthropic-version' => '2023-06-01',
-                'content-type'      => 'application/json',
-            ])->timeout(30)->post('https://api.anthropic.com/v1/messages', [
-                'model'      => 'claude-3-haiku-20240307',
-                'max_tokens' => 300,
-                'system'     => 'You are a helpful fitness AI coach. Keep responses under 3 sentences.',
-                'messages'   => [
-                    ['role' => 'user', 'content' => $message],
+                'Content-Type' => 'application/json',
+            ])->timeout(30)->post($url, [
+                'systemInstruction' => [
+                    'parts' => [
+                        ['text' => 'You are a helpful fitness AI coach. Keep responses under 3 sentences.']
+                    ]
                 ],
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => $message]
+                        ]
+                    ]
+                ]
             ]);
 
-            return $response->json('content.0.text', "I'm having trouble connecting right now.");
+            if (!$response->successful()) {
+                return "I'm having trouble connecting right now.";
+            }
+
+            return $response->json('candidates.0.content.parts.0.text', "I'm having trouble connecting right now.");
         } catch (\Exception $e) {
+            Log::error('Gemini API Chat Error: ' . $e->getMessage());
             return "I'm a bit overwhelmed with data right now.";
         }
     }

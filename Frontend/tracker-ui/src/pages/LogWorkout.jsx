@@ -305,7 +305,7 @@ export default function LogWorkout() {
             <p className="text-[11px] text-on-surface-variant font-bold leading-relaxed">
               Submitting this workout triggers the <span className="text-on-surface">WorkoutObserver</span>. 
               The backend dispatches an async <span className="text-on-surface">AnalyzeWorkoutJob</span> 
-              which uses <span className="text-on-surface">Claude AI</span> to update your insights via 
+              which uses <span className="text-on-surface">Gemini AI</span> to update your insights via 
               <span className="text-secondary"> Laravel Reverb</span> WebSockets.
             </p>
           </div>

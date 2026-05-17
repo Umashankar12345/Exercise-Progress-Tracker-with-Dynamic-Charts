@@ -74,7 +74,7 @@ export default function AIInsights() {
             <div className="flex items-center gap-4 mt-2">
               <div className="flex items-center gap-1.5 text-xs font-bold text-secondary uppercase tracking-widest">
                 <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                Claude 3.5 Engine Active
+                Gemini 1.5 Engine Active
               </div>
               <span className="text-outline-variant text-xs">|</span>
               <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
@@ -222,7 +222,7 @@ export default function AIInsights() {
                 </button>
               </div>
               <p className="text-[9px] text-center text-on-surface-variant mt-3 font-bold uppercase tracking-widest opacity-50">
-                Powered by Claude 3.5 Sonnet
+                Powered by Gemini 1.5 Flash
               </p>
             </div>
           </div>

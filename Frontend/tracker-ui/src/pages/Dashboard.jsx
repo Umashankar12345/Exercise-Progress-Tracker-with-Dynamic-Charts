@@ -108,7 +108,7 @@ export default function Dashboard() {
       {/* Real-time Status Bar */}
       <div className="flex items-center justify-between px-5 py-3 rounded-xl bg-secondary/5 border border-secondary/10">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-secondary animate-pulse-slow" />
           <span className="text-xs font-bold text-secondary uppercase tracking-widest">Real-time Sync Active</span>
           <span className="text-on-surface-variant/30 text-xs">|</span>
           <span className="text-xs text-on-surface-variant font-medium">Laravel Reverb Connected</span>
@@ -279,23 +279,40 @@ export default function Dashboard() {
               <span className="text-[10px] font-bold text-secondary">LIVE FROM API</span>
             </div>
           </div>
-          <div className="divide-y divide-outline-variant">
-            {Array.isArray(prs) && prs.slice(0, 4).map((pr, i) => (
-              <div key={i} className="p-4 flex items-center gap-4 hover:bg-surface-bright transition-colors cursor-default group">
-                <div className="w-10 h-10 bg-surface-bright border border-outline-variant rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                  {(pr.exercise || '').includes('Bench') ? '🏋️' : (pr.exercise || '').includes('Squat') ? '🦵' : '💪'}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-bold text-on-surface">{pr.exercise}</div>
-                  <div className="text-[10px] font-medium text-on-surface-variant">{pr.date}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-black text-primary">{pr.weight} kg</div>
-                  <div className="text-[10px] font-bold text-secondary uppercase tracking-tighter">New PR</div>
-                </div>
+          {(!prs || prs.length === 0) ? (
+            <div className="flex flex-col items-center justify-center h-64 p-6 text-center animate-fade-in-up">
+              <div className="p-4 mb-4 rounded-full bg-surface-container-high text-tertiary backdrop-blur-sm">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-4-9 4 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                </svg>
               </div>
-            ))}
-          </div>
+              <h3 className="text-base font-semibold text-on-surface">No Records Achieved Yet</h3>
+              <p className="max-w-xs mt-1 text-xs text-on-surface-variant">
+                Log your training sessions. Your peak lifts and benchmarks will showcase here.
+              </p>
+              <button className="mt-4 px-4 py-1.5 bg-primary hover:bg-primary/80 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-md hover:scale-105">
+                + Log First Session
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-outline-variant">
+              {Array.isArray(prs) && prs.slice(0, 4).map((pr, i) => (
+                <div key={i} className="p-4 flex items-center gap-4 hover:bg-surface-bright transition-colors cursor-default group">
+                  <div className="w-10 h-10 bg-surface-bright border border-outline-variant rounded-xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                    {(pr.exercise || '').includes('Bench') ? '🏋️' : (pr.exercise || '').includes('Squat') ? '🦵' : '💪'}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold text-on-surface">{pr.exercise}</div>
+                    <div className="text-[10px] font-medium text-on-surface-variant">{pr.date}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-black text-primary">{pr.weight} kg</div>
+                    <div className="text-[10px] font-bold text-secondary uppercase tracking-tighter">New PR</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* AI Schedule */}

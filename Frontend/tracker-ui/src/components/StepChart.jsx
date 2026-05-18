@@ -1,16 +1,19 @@
 import React from 'react';
 
 export const StepChart = ({ data }) => {
-    // If no data, show dummy data for visualization as requested by the user
-    const chartData = data && data.length > 0 ? data : [
-        { date: 'Mon', step_count: 8000 },
-        { date: 'Tue', step_count: 9500 },
-        { date: 'Wed', step_count: 7000 },
-        { date: 'Thu', step_count: 12000 },
-        { date: 'Fri', step_count: 10500 },
-    ];
-
-    const maxSteps = Math.max(...chartData.map(d => d.step_count), 12000);
+    // Ensure we handle both potential array structures or empty states safely
+    const chartData = data && data.length > 0 ? data : [];
+    
+    // Get today's steps (assuming last item in array is today, or 0 if empty)
+    const currentSteps = chartData.length > 0 ? chartData[chartData.length - 1].step_count : 0;
+    const stepGoal = 10000;
+    
+    // Calculate percentage capped at 100%
+    const percentage = Math.min((currentSteps / stepGoal) * 100, 100);
+    
+    // SVG Circle Radius math: 2 * pi * r (r=40 -> circumference ≈ 251.2)
+    const circumference = 251.2;
+    const strokeOffset = circumference - (percentage / 100) * circumference;
 
     return (
         <div className="step-chart p-6 glass-card flex flex-col gap-6">
@@ -21,45 +24,50 @@ export const StepChart = ({ data }) => {
                 </span>
             </div>
             
-            <div className="h-64 flex items-end justify-between gap-2 px-2">
-                {chartData.map((item, index) => {
-                    const height = (item.step_count / maxSteps) * 100;
-                    return (
-                        <div key={index} className="flex-1 flex flex-col items-center group">
-                            <div className="relative w-full flex flex-col items-center">
-                                {/* Tooltip on hover */}
-                                <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-high text-on-surface border border-outline-variant text-xs py-1 px-2 rounded mb-2 whitespace-nowrap z-10 font-medium">
-                                    {item.step_count.toLocaleString()} steps
-                                </div>
-                                
-                                {/* Bar */}
-                                <div 
-                                    className={`w-full max-w-[40px] rounded-t-lg transition-all duration-500 ease-out cursor-pointer
-                                        ${item.step_count >= 10000 ? 'bg-gradient-to-t from-secondary to-[#34d399]' : 'bg-gradient-to-t from-primary to-[#60a5fa]'}
-                                        hover:opacity-80 shadow-sm`}
-                                    style={{ height: `${height}%`, minHeight: '10%' }}
-                                ></div>
-                            </div>
-                            <span className="mt-3 text-[10px] font-bold text-outline uppercase tracking-wider">{item.date}</span>
+            {chartData.length === 0 || currentSteps === 0 ? (
+                // EMPTY STATE UI
+                <div className="flex flex-col items-center justify-center h-64 p-6 text-center animate-fade-in-up">
+                    <div className="p-4 mb-4 rounded-full bg-surface-container-high text-secondary backdrop-blur-sm">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h3 className="text-base font-semibold text-on-surface">No Steps Recorded</h3>
+                    <p className="max-w-xs mt-1 text-xs text-on-surface-variant">
+                        Sync your device or log your daily activity to track your progress towards 10,000 steps.
+                    </p>
+                </div>
+            ) : (
+                // CIRCULAR PROGRESS UI
+                <div className="relative flex flex-col items-center justify-center h-64">
+                    <div className="relative w-48 h-48">
+                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" stroke="#2a2a2a" strokeWidth="8" fill="transparent"/>
+                            <circle 
+                                cx="50" 
+                                cy="50" 
+                                r="40" 
+                                stroke="#10b981" 
+                                strokeWidth="8" 
+                                fill="transparent"
+                                strokeDasharray={circumference}
+                                strokeDashoffset={strokeOffset}
+                                strokeLinecap="round"
+                                className="transition-all duration-1000 ease-out" 
+                            />
+                        </svg>
+                        
+                        <div className="absolute inset-0 flex flex-col items-center justify-center animate-fade-in-up">
+                            <span className="text-4xl font-black text-on-surface tracking-tight">
+                                {currentSteps.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] text-on-surface-variant font-bold tracking-widest uppercase mt-1">
+                                / {stepGoal.toLocaleString()} steps
+                            </span>
                         </div>
-                    );
-                })}
-            </div>
-
-            <div className="mt-2 grid grid-cols-2 gap-4">
-                <div className="bg-surface-container-high p-4 rounded-xl border border-outline-variant">
-                    <p className="text-[10px] text-primary font-bold uppercase tracking-wider mb-1">Avg. Steps</p>
-                    <p className="text-xl font-black text-on-surface">
-                        {Math.round(chartData.reduce((acc, curr) => acc + curr.step_count, 0) / chartData.length).toLocaleString()}
-                    </p>
+                    </div>
                 </div>
-                <div className="bg-surface-container-high p-4 rounded-xl border border-outline-variant">
-                    <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-1">Total Calories</p>
-                    <p className="text-xl font-black text-on-surface">
-                        {Math.round(chartData.reduce((acc, curr) => acc + curr.step_count, 0) * 0.04).toLocaleString()} kcal
-                    </p>
-                </div>
-            </div>
+            )}
         </div>
     );
 };

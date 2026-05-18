@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Workout;
+use App\Events\WorkoutSaved;
 use Illuminate\Http\Request;
 
 class WorkoutController extends Controller
@@ -56,6 +57,21 @@ class WorkoutController extends Controller
         
         // Pass userId (int) as expected by the job constructor
         \App\Jobs\AnalyzeWorkoutJob::dispatch($request->user()->id);
+        
+        $totalSets = count($validated['sets'] ?? []);
+        $totalVolume = 0;
+        foreach ($validated['sets'] ?? [] as $set) {
+            $totalVolume += ($set['weight'] ?? 0) * ($set['reps'] ?? 0);
+        }
+
+        broadcast(new WorkoutSaved(
+            $request->user()->id,
+            $workout->id,
+            $workout->name,
+            $totalSets,
+            $totalVolume,
+            now()->toIso8601String()
+        ))->toOthers();
         
         return response()->json($workout->load('workoutExercises.workoutSets'), 201);
     }

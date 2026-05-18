@@ -81,7 +81,7 @@ export default function Sidebar({ onClose }) {
       <nav className="flex-1 px-4 py-6 flex flex-col gap-8 overflow-y-auto">
         {NAV_GROUPS.map((group) => (
           <div key={group.title} className="flex flex-col gap-2">
-            <span className="px-4 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50">
+            <span className="px-4 text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant/50 mt-2 pt-2 border-t border-outline-variant/30 first:border-0 first:mt-0 first:pt-0">
               {group.title}
             </span>
             <div className="flex flex-col gap-1">
@@ -95,7 +95,7 @@ export default function Sidebar({ onClose }) {
                     flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group
                     ${isActive 
                       ? 'bg-primary/10 text-primary font-medium border border-primary/20' 
-                      : 'text-on-surface-variant hover:bg-surface-bright hover:text-on-surface'}
+                      : 'text-on-surface-variant/60 hover:bg-surface-bright hover:text-on-surface'}
                   `}
                 >
                   <item.icon className={`w-5 h-5 ${item.badge === 'AI' ? 'text-secondary' : ''}`} />
@@ -114,19 +114,25 @@ export default function Sidebar({ onClose }) {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-outline-variant">
+      <div className="mt-auto p-4 border-t border-outline-variant/80">
         <div 
           onClick={handleLogout}
-          className="flex items-center gap-3 p-3 rounded-xl bg-surface-container hover:bg-surface-bright border border-outline-variant transition-colors cursor-pointer group"
+          className="flex items-center justify-between p-2 rounded-xl bg-surface-container-high/30 border border-outline-variant/50 backdrop-blur-sm group hover:bg-surface-container-high/50 transition-all duration-300 cursor-pointer"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-sm font-bold text-white shadow-inner">
-            {initials}
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center justify-center h-9 w-9 rounded-full bg-gradient-to-tr from-primary to-secondary text-white font-bold text-sm ring-2 ring-background">
+              {initials}
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-secondary ring-2 ring-background animate-pulse"></span>
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-on-surface tracking-wide truncate">{user?.name ?? 'Guest User'}</span>
+              <span className="text-[10px] font-medium text-secondary uppercase tracking-widest">Pro Athlete</span>
+            </div>
           </div>
-          <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-sm font-semibold truncate text-on-surface">{user?.name ?? 'Guest User'}</span>
-            <span className="text-[10px] text-primary font-medium">Pro Athlete</span>
-          </div>
-          <LogOut className="w-4 h-4 text-on-surface-variant group-hover:text-red-400 transition-colors" />
+          
+          <button className="text-on-surface-variant hover:text-red-400 p-1.5 rounded-lg hover:bg-surface-bright transition-colors">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

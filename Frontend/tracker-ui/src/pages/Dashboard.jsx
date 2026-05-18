@@ -11,7 +11,8 @@ import {
   Zap,
   Calendar,
   Bot,
-  ArrowRight
+  ArrowRight,
+  Dumbbell
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -25,6 +26,7 @@ import {
   Area
 } from 'recharts';
 import api from '../api/axios';
+import toast from 'react-hot-toast';
 import { StepChart } from '../components/StepChart';
 import { useAIInsights } from '../hooks/useAIInsights';
 import useStore from '../store/useStore';
@@ -70,6 +72,44 @@ export default function Dashboard() {
   const [muscles, setMuscles] = useState([]);
   const [steps, setSteps]     = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal State
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [logForm, setLogForm] = useState({ exercise_name: '', weight: '', reps: '' });
+
+  const handleLogSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: logForm.exercise_name,
+        started_at: new Date().toISOString(),
+        sets: [
+          {
+            weight: parseFloat(logForm.weight),
+            reps: parseInt(logForm.reps, 10),
+          }
+        ]
+      };
+      
+      await api.post('/workouts', payload);
+      toast.success('Workout tracked successfully!');
+      setIsLogModalOpen(false);
+      setLogForm({ exercise_name: '', weight: '', reps: '' });
+      
+      // Refresh dashboard data
+      const [s, p, m] = await Promise.all([
+        api.get('/progress/summary'),
+        api.get('/prs'),
+        api.get('/progress/muscles'),
+      ]);
+      setSummary(s.data);
+      setPrs(p.data);
+      setMuscles(m.data);
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to log workout');
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -230,7 +270,7 @@ export default function Dashboard() {
               <span className="text-[10px] font-black uppercase tracking-widest text-primary">AI Recommendation</span>
             </div>
             <p className="text-on-surface font-semibold text-lg leading-snug mb-4">
-              {insights?.[0]?.text ?? "Your back volume is lagging. Add 2 sets of rows to your next session for balance."}
+              {insights?.[0]?.text ?? "Increase your squats by 2.5 kg this week to maintain progressive overload."}
             </p>
             <button className="text-xs font-bold text-primary flex items-center gap-1 group/btn">
               VIEW ALL INSIGHTS 
@@ -245,7 +285,7 @@ export default function Dashboard() {
               <Activity className="w-4 h-4 text-secondary" />
             </div>
             <div className="p-6 flex flex-col gap-5">
-              {Array.isArray(muscles) && muscles.map(m => (
+              {Array.isArray(muscles) && muscles.length > 0 ? muscles.map(m => (
                 <div key={m.name} className="flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs font-bold">
                     <span className="text-on-surface-variant">{m.name}</span>
@@ -261,7 +301,16 @@ export default function Dashboard() {
                     />
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="flex flex-col items-center justify-center text-center py-8 animate-fade-in-up">
+                  <div className="p-4 mb-4 rounded-full bg-surface-container-high text-on-surface-variant backdrop-blur-sm">
+                    <Dumbbell className="w-8 h-8" />
+                  </div>
+                  <p className="text-sm font-medium text-on-surface-variant max-w-[200px]">
+                    Log sessions to map your muscle symmetry.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -290,7 +339,10 @@ export default function Dashboard() {
               <p className="max-w-xs mt-1 text-xs text-on-surface-variant">
                 Log your training sessions. Your peak lifts and benchmarks will showcase here.
               </p>
-              <button className="mt-4 px-4 py-1.5 bg-primary hover:bg-primary/80 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-md hover:scale-105">
+              <button 
+                onClick={() => setIsLogModalOpen(true)}
+                className="mt-4 px-4 py-1.5 bg-primary hover:bg-primary/80 text-white text-xs font-medium rounded-lg transition-all duration-200 shadow-md hover:scale-105"
+              >
                 + Log First Session
               </button>
             </div>
@@ -340,6 +392,63 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Log Modal */}
+      {isLogModalOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-zinc-950 border-l border-zinc-800 p-6 text-white h-full flex flex-col justify-between overflow-y-auto shadow-2xl">
+            <div>
+              <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
+                <h3 className="text-base font-bold text-zinc-100">Log New Workout Session</h3>
+                <button onClick={() => setIsLogModalOpen(false)} className="text-zinc-400 hover:text-white text-lg">✕</button>
+              </div>
+
+              <form onSubmit={handleLogSubmit} className="space-y-4 mt-6">
+                <div>
+                  <label className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Exercise Name</label>
+                  <input 
+                    type="text" 
+                    value={logForm.exercise_name}
+                    onChange={e => setLogForm({...logForm, exercise_name: e.target.value})}
+                    placeholder="e.g., Bench Press, Squat" 
+                    className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
+                    required 
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Weight (kg)</label>
+                    <input 
+                      type="number" 
+                      value={logForm.weight}
+                      onChange={e => setLogForm({...logForm, weight: e.target.value})}
+                      placeholder="0" 
+                      className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Reps</label>
+                    <input 
+                      type="number" 
+                      value={logForm.reps}
+                      onChange={e => setLogForm({...logForm, reps: e.target.value})}
+                      placeholder="0" 
+                      className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full mt-4 bg-primary hover:bg-primary/80 text-white text-sm font-medium py-3 rounded-xl transition-colors">
+                  Save Workout Session
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

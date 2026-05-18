@@ -16,15 +16,6 @@ import {
 import api from '../api/axios';
 import AIInsightsCard from '../components/AIInsightsCard';
 
-const EXERCISES = {
-  Chest:     ['Bench Press', 'Incline DB Press', 'Cable Fly', 'Chest Dips'],
-  Back:      ['Deadlift', 'Pull-ups', 'Barbell Row', 'Lat Pulldown'],
-  Legs:      ['Squat', 'Leg Press', 'Romanian Deadlift', 'Leg Curl'],
-  Shoulders: ['Overhead Press', 'Lateral Raises', 'Face Pulls'],
-  Arms:      ['Barbell Curl', 'Tricep Pushdown', 'Hammer Curl'],
-  Core:      ['Plank', 'Cable Crunch', 'Leg Raise'],
-};
-
 const defaultSets = [
   { id: 1, reps: 10, weight: 60 },
   { id: 2, reps: 10, weight: 60 },
@@ -32,6 +23,7 @@ const defaultSets = [
 ];
 
 export default function LogWorkout() {
+  const [dbExercises, setDbExercises] = useState([]);
   const [exercise, setExercise] = useState('');
   const [sets, setSets]         = useState(defaultSets);
   const [notes, setNotes]       = useState('');
@@ -42,7 +34,15 @@ export default function LogWorkout() {
 
   useEffect(() => {
     api.get('/goals').then(r => setGoals(r.data.data || [])).catch(() => {});
+    api.get('/exercises').then(r => setDbExercises(r.data || [])).catch(e => console.error("Exercises fetch error", e));
   }, []);
+
+  const groupedExercises = dbExercises.reduce((acc, ex) => {
+    const group = ex.muscle_group || 'Other';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(ex.name);
+    return acc;
+  }, {});
 
   const updateSet = (id, field, val) =>
     setSets(prev => prev.map(s => s.id === id ? { ...s, [field]: Number(val) } : s));
@@ -150,7 +150,7 @@ export default function LogWorkout() {
                     className="w-full bg-surface-container border border-outline-variant rounded-xl py-4 pl-4 pr-10 text-on-surface font-bold focus:outline-none focus:border-primary transition-all appearance-none cursor-pointer"
                   >
                     <option value="" disabled>Choose exercise...</option>
-                    {Object.entries(EXERCISES).map(([group, items]) => (
+                    {Object.entries(groupedExercises).map(([group, items]) => (
                       <optgroup key={group} label={group} className="bg-surface font-bold text-primary">
                         {items.map(ex => <option key={ex} value={ex} className="text-on-surface">{ex}</option>)}
                       </optgroup>

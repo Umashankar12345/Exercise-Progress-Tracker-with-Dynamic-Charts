@@ -23,27 +23,52 @@ import {
   Maximize2
 } from 'lucide-react';
 
-const volumeData = [
-  { date: 'May 01', volume: 4200, intensity: 85, sessions: 1 },
-  { date: 'May 03', volume: 5100, intensity: 88, sessions: 1 },
-  { date: 'May 04', volume: 3800, intensity: 82, sessions: 1 },
-  { date: 'May 06', volume: 6200, intensity: 90, sessions: 1 },
-  { date: 'May 08', volume: 5800, intensity: 92, sessions: 1 },
-  { date: 'May 10', volume: 7100, intensity: 95, sessions: 1 },
-  { date: 'May 12', volume: 5400, intensity: 89, sessions: 1 },
-];
-
-const muscleData = [
-  { name: 'Chest', value: 85, color: '#3b82f6' },
-  { name: 'Back', value: 72, color: '#10b981' },
-  { name: 'Legs', value: 94, color: '#f59e0b' },
-  { name: 'Shoulders', value: 65, color: '#8b5cf6' },
-  { name: 'Arms', value: 58, color: '#ef4444' },
-];
+import api from '../api/axios';
+import { useEffect } from 'react';
 
 export default function ProgressCharts() {
+  const [dbExercises, setDbExercises] = useState([]);
   const [selectedExercise, setSelectedExercise] = useState('Bench Press');
   const [timeframe, setTimeframe] = useState('30D');
+  const [chartData, setChartData] = useState([]);
+  const [muscleData, setMuscleData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    api.get('/exercises')
+      .then(res => {
+        setDbExercises(res.data || []);
+        if (res.data && res.data.length > 0) {
+          const hasBench = res.data.some(ex => ex.name === 'Bench Press');
+          if (!hasBench) {
+            setSelectedExercise(res.data[0].name);
+          }
+        }
+      })
+      .catch(err => console.error("Error fetching exercises:", err));
+
+    api.get('/progress/muscles')
+      .then(res => {
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
+        const mapped = (res.data || []).map((m, idx) => ({
+          name: m.name,
+          value: m.percentage,
+          color: colors[idx % colors.length]
+        }));
+        setMuscleData(mapped);
+      })
+      .catch(err => console.error("Error fetching muscle stats:", err));
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    api.get(`/progress?exercise=${encodeURIComponent(selectedExercise)}&range=${timeframe.toLowerCase()}`)
+      .then(res => {
+        setChartData(res.data || []);
+      })
+      .catch(err => console.error("Error fetching progress chart:", err))
+      .finally(() => setLoading(false));
+  }, [selectedExercise, timeframe]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -54,7 +79,17 @@ export default function ProgressCharts() {
             <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">Target Analysis</span>
             <div className="flex items-center gap-2 text-on-surface font-bold">
               <Activity className="w-4 h-4 text-primary" />
-              <span>{selectedExercise}</span>
+              <select
+                value={selectedExercise}
+                onChange={e => setSelectedExercise(e.target.value)}
+                className="bg-transparent border-none text-on-surface font-bold focus:outline-none cursor-pointer focus:ring-1 focus:ring-primary rounded px-1 -ml-1 text-[14px]"
+              >
+                {dbExercises.map(ex => (
+                  <option key={ex.id} value={ex.name} className="bg-surface-container text-on-surface font-bold">
+                    {ex.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="h-8 w-px bg-outline-variant" />
@@ -62,7 +97,7 @@ export default function ProgressCharts() {
             <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1">Active Timeframe</span>
             <div className="flex items-center gap-2 text-on-surface font-bold">
               <Calendar className="w-4 h-4 text-secondary" />
-              <span>Last 30 Days</span>
+              <span>{timeframe === 'ALL' ? 'All Time' : `Last ${timeframe.replace('D', ' Days')}`}</span>
             </div>
           </div>
         </div>
@@ -103,7 +138,7 @@ export default function ProgressCharts() {
           </div>
           <div className="p-6 h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={volumeData}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="strengthGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -177,11 +212,11 @@ export default function ProgressCharts() {
               <div className="p-4 rounded-xl bg-surface-bright border border-outline-variant flex items-center justify-between group cursor-default">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Top Muscle</span>
-                  <span className="text-sm font-bold text-on-surface">Quadriceps</span>
+                  <span className="text-sm font-bold text-on-surface">{muscleData.length > 0 ? muscleData[0].name : 'None yet'}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-black text-secondary uppercase tracking-wider">Growth Rate</span>
-                  <div className="text-sm font-black text-secondary">+14.2%</div>
+                  <span className="text-[10px] font-black text-secondary uppercase tracking-wider">Volume Percentage</span>
+                  <div className="text-sm font-black text-secondary">{muscleData.length > 0 ? `${muscleData[0].value}%` : '0%'}</div>
                 </div>
               </div>
             </div>
@@ -209,7 +244,7 @@ export default function ProgressCharts() {
           </div>
           <div className="p-6 h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={volumeData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#2a2a2a" />
                 <XAxis dataKey="date" hide />
                 <YAxis hide />
@@ -232,7 +267,7 @@ export default function ProgressCharts() {
           </div>
           <div className="p-6 h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={volumeData}>
+              <BarChart data={chartData}>
                 <XAxis dataKey="date" hide />
                 <YAxis hide />
                 <Tooltip />

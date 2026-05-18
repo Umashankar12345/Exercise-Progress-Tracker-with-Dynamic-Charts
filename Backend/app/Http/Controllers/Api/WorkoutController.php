@@ -95,11 +95,24 @@ class WorkoutController extends Controller
 
     public function prs(Request $request)
     {
-        // Mock calculation for personal records
-        return response()->json([
-            ['exercise' => 'Bench Press', 'weight' => '100', 'date' => '2026-05-01'],
-            ['exercise' => 'Squat', 'weight' => '140', 'date' => '2026-05-02'],
-            ['exercise' => 'Deadlift', 'weight' => '160', 'date' => '2026-05-03'],
-        ]);
+        $userId = $request->user()->id;
+
+        $prs = \App\Models\WorkoutSet::whereHas('workoutExercise.workout', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })
+        ->join('workout_exercises', 'workout_sets.workout_exercise_id', '=', 'workout_exercises.id')
+        ->join('exercises', 'workout_exercises.exercise_id', '=', 'exercises.id')
+        ->selectRaw('exercises.name as exercise, MAX(workout_sets.weight) as weight, DATE(MAX(workout_sets.created_at)) as date')
+        ->groupBy('exercises.name')
+        ->get()
+        ->map(function ($pr) {
+            return [
+                'exercise' => $pr->exercise,
+                'weight' => (float)$pr->weight,
+                'date' => $pr->date,
+            ];
+        });
+
+        return response()->json($prs);
     }
 }

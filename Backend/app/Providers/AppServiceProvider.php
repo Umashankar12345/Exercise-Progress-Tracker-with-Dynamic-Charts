@@ -22,5 +22,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Workout::observe(ProgressSnapshotObserver::class);
+        \App\Models\WorkoutSet::observe(\App\Observers\WorkoutSetObserver::class);
     }
 }

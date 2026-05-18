@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import useStore from '../store/useStore';
 import api from '../api/axios';
+import { getEcho } from '../lib/echo';
 
 const NAV_GROUPS = [
   {
@@ -63,9 +64,25 @@ export default function Sidebar({ onClose }) {
 
   React.useEffect(() => {
     if (!user) return;
+    
+    // Fetch initial
     fetchUnreadCount();
+    
+    // Setup private Reverb Echo listener
+    const echoInstance = getEcho();
+    echoInstance.private(`user.${user.id}`)
+      .listen('.WorkoutLogged', (e) => {
+        if (e.increment_insights) {
+          setUnreadCount(prev => prev + 1);
+        }
+      });
+
     const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearInterval(interval);
+      echoInstance.disconnect();
+    };
   }, [user]);
 
   const handleLogout = async () => {

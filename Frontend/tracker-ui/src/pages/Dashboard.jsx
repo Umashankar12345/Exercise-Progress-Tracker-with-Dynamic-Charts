@@ -30,6 +30,7 @@ import toast from 'react-hot-toast';
 import { StepChart } from '../components/StepChart';
 import { useAIInsights } from '../hooks/useAIInsights';
 import useStore from '../store/useStore';
+import { getEcho } from '../lib/echo';
 
 const MUSCLE_COLORS = { 
   Chest: '#3b82f6', 
@@ -133,6 +134,55 @@ export default function Dashboard() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    
+    // Subscribe to Laravel Echo via Reverb WebSockets
+    const echoInstance = getEcho();
+    echoInstance.private(`user.${user.id}`)
+      .listen('.WorkoutLogged', async (e) => {
+        // 1. Instantly update the primary summary counters!
+        setSummary(prev => ({
+          ...prev,
+          total_workouts: e.total_workouts,
+          total_volume: e.total_volume,
+          prs: e.prs
+        }));
+        
+        // 2. Refresh dynamic details (like muscles, step charts, and personal records lists) for visual perfection!
+        try {
+          const [p, m, st] = await Promise.all([
+            api.get('/prs'),
+            api.get('/progress/muscles'),
+            api.get('/daily-steps'),
+          ]);
+          setPrs(p.data);
+          setMuscles(m.data);
+          setSteps(st.data);
+        } catch (err) {
+          console.error(err);
+        }
+        
+        // 3. Trigger a beautiful, premium toast notification alert!
+        toast.success(`Workout Session Logged! Total Workouts: ${e.total_workouts} · Volume: ${e.total_volume.toLocaleString()} kg`, {
+          position: 'bottom-right',
+          duration: 5000,
+          style: {
+            background: '#1c1c1c',
+            color: '#ffffff',
+            border: '1px solid #3b82f6',
+            borderRadius: '12px',
+            fontSize: '13px',
+            fontWeight: '600'
+          }
+        });
+      });
+      
+    return () => {
+      echoInstance.disconnect();
+    };
+  }, [user]);
+
   const volumeData = [
     { name: 'Mon', vol: 4200 },
     { name: 'Tue', vol: 5100 },
@@ -154,7 +204,7 @@ export default function Dashboard() {
           <span className="text-xs text-on-surface-variant font-medium">Laravel Reverb Connected</span>
         </div>
         <div className="flex gap-2">
-          {['workout.saved', 'insight.ready'].map(evt => (
+          {['workout.logged', 'insight.ready'].map(evt => (
             <span key={evt} className="px-2 py-1 bg-surface-bright border border-outline-variant rounded-md text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
               {evt}
             </span>
@@ -420,36 +470,35 @@ export default function Dashboard() {
                   <div>
                     <label className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Weight (kg)</label>
                     <input 
-                      type="number" 
-                      value={logForm.weight}
-                      onChange={e => setLogForm({...logForm, weight: e.target.value})}
-                      placeholder="0" 
-                      className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Reps</label>
-                    <input 
-                      type="number" 
-                      value={logForm.reps}
-                      onChange={e => setLogForm({...logForm, reps: e.target.value})}
-                      placeholder="0" 
-                      className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
-                      required 
-                    />
-                  </div>
+                    type="number" 
+                    value={logForm.weight}
+                    onChange={e => setLogForm({...logForm, weight: e.target.value})}
+                    placeholder="0" 
+                    className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
+                    required 
+                  />
                 </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Reps</label>
+                  <input 
+                    type="number" 
+                    value={logForm.reps}
+                    onChange={e => setLogForm({...logForm, reps: e.target.value})}
+                    placeholder="0" 
+                    className="w-full mt-1.5 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary" 
+                    required 
+                  />
+                </div>
+              </div>
 
-                <button type="submit" className="w-full mt-4 bg-primary hover:bg-primary/80 text-white text-sm font-medium py-3 rounded-xl transition-colors">
-                  Save Workout Session
-                </button>
-              </form>
-            </div>
+              <button type="submit" className="w-full mt-4 bg-primary hover:bg-primary/80 text-white text-sm font-medium py-3 rounded-xl transition-colors">
+                Save Workout Session
+              </button>
+            </form>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+);
 }
-

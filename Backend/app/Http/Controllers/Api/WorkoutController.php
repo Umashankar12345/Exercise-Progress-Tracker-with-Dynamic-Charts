@@ -72,6 +72,28 @@ class WorkoutController extends Controller
             $totalVolume,
             now()->toIso8601String()
         ))->toOthers();
+
+        $user = $request->user();
+        $totalWorkouts = $user->workouts()->count();
+        $allVolume = \App\Models\WorkoutSet::whereHas('workoutExercise.workout', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->selectRaw('SUM(reps * weight) as total')->value('total') ?? 0;
+
+        $prsCount = \App\Models\WorkoutSet::whereHas('workoutExercise.workout', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+        ->join('workout_exercises', 'workout_sets.workout_exercise_id', '=', 'workout_exercises.id')
+        ->groupBy('workout_exercises.exercise_id')
+        ->get()
+        ->count();
+
+        broadcast(new \App\Events\WorkoutLogged(
+            $user->id,
+            $totalWorkouts,
+            (float) $allVolume,
+            $prsCount,
+            true
+        ));
         
         return response()->json($workout->load('workoutExercises.workoutSets'), 201);
     }

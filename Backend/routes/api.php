@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DailyStepController;
 use App\Http\Controllers\Api\HealthMetricController;
 use App\Http\Controllers\Api\WorkoutPlanController;
+use App\Http\Controllers\Api\MonthlyReportController;
 
 Route::get('/login', function () {
     return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -68,4 +69,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ai/insights', [AIController::class, 'insights']);
     Route::post('/ai/chat', [AIController::class, 'chat']);
     Route::get('/workouts/{workout}/export', [ExportController::class, 'exportWorkout']);
+    Route::match(['get', 'post'], '/reports/monthly', [MonthlyReportController::class, 'getReport']);
 });

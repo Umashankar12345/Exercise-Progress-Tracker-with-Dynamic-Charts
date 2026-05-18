@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import LogWorkout from './pages/LogWorkout';
 import ProgressCharts from './pages/ProgressCharts';
 import ExerciseLibrary from './pages/ExerciseLibrary';
+import ExerciseDetail from './pages/ExerciseDetail';
 import AIInsights from './pages/AIInsights';
 import Profile from './pages/Profile';
 import Plan from './pages/Plan';
@@ -37,6 +38,7 @@ function App() {
           <Route path="log"      element={<LogWorkout />} />
           <Route path="charts"   element={<ProgressCharts />} />
           <Route path="library"  element={<ExerciseLibrary />} />
+          <Route path="library/:id" element={<ExerciseDetail />} />
           <Route path="insights" element={<AIInsights />} />
           <Route path="profile"  element={<Profile />} />
           <Route path="plan"     element={<Plan />} />

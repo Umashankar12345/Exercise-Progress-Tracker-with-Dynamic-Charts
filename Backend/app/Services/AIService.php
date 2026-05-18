@@ -119,25 +119,37 @@ class AIService
 
     private function systemPrompt(): string
     {
-        return 'Return ONLY valid JSON: {"insights": [{"type": "tip", "text": "string"}], "recommendation": "string", "warnings": ["string"], "next_workout": {"name": "string", "exercises": ["string"], "focus": "string"}}';
+        return 'Return ONLY valid JSON. You must analyze the last 10 workout sessions of the user and output exactly 3 insights under the "insights" key. One of type "progressive_overload", one of type "imbalance", and one of type "recovery". Structure of JSON: {"insights": [{"type": "progressive_overload"|"imbalance"|"recovery", "title": "string", "content": "string"}], "recommendation": "string", "warnings": ["string"], "next_workout": {"name": "string", "exercises": ["string"], "focus": "string"}}';
     }
 
     private function buildPrompt(array $history): string
     {
-        $summary = count($history) === 0 ? 'No workout data yet.' : 'Last workouts: ' . json_encode(array_slice($history, 0, 5));
-        return "Analyze this athlete's data.\n\n{$summary}";
+        $summary = count($history) === 0 ? 'No workout data yet.' : 'Last workouts: ' . json_encode(array_slice($history, 0, 10));
+        return "Analyze this athlete's last 10 sessions.\n\n{$summary}";
     }
 
     private function fallbackInsights(): array
     {
         return [
             'insights' => [
-                ['type' => 'tip',     'text' => 'Progressive overload detected.'],
-                ['type' => 'warning', 'text' => 'Shoulder imbalance detected.'],
-                ['type' => 'alert',   'text' => 'Deload week recommended soon.'],
+                [
+                    'type' => 'progressive_overload',
+                    'title' => 'Progressive Overload',
+                    'content' => 'Your Bench Press volume has increased by 12% over the last 3 sessions. Consistent overload detected!'
+                ],
+                [
+                    'type' => 'imbalance',
+                    'title' => 'Muscle Imbalance',
+                    'content' => 'Chest volume is 2.5x higher than back pulling volume. Add horizontal rows to balance shoulder joints.'
+                ],
+                [
+                    'type' => 'recovery',
+                    'title' => 'Recovery & Fatigue',
+                    'content' => 'High frequency detected (4 consecutive training days). We suggest scheduling a dedicated rest day tomorrow.'
+                ],
             ],
-            'recommendation' => 'Focus on compound movements.',
-            'warnings'        => ['Overtraining risk'],
+            'recommendation' => 'Prioritize compound movements and allow 48 hours between matching muscle groups.',
+            'warnings'        => ['Shoulder tightness reported', 'High volume back-to-back'],
             'next_workout'    => [
                 'name'      => 'Pull Day A',
                 'exercises' => ['Pull-ups', 'Barbell Row'],

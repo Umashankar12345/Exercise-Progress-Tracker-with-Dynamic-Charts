@@ -30,7 +30,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Core API Resources
     Route::apiResource('workouts', WorkoutController::class);
-    Route::apiResource('exercises', ExerciseController::class);
+    Route::get('/exercises', [\App\Http\Controllers\Api\ExerciseLibraryController::class, 'index']);
+    Route::get('/exercises/{id}', [\App\Http\Controllers\Api\ExerciseLibraryController::class, 'show']);
     Route::apiResource('sets', WorkoutSetController::class);
     Route::apiResource('goals', GoalController::class);
     
@@ -52,6 +53,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/progress/muscles', [ProgressController::class, 'muscles']);
     Route::get('/progress', [ProgressController::class, 'index']);
     Route::post('/progress/{snapshot}/photo', [ProgressPhotoController::class, 'store']);
+    
+    // AI Insights (Stored in Database)
+    Route::get('/insights', [\App\Http\Controllers\Api\AIInsightController::class, 'index']);
+    Route::get('/insights/unread-count', [\App\Http\Controllers\Api\AIInsightController::class, 'unreadCount']);
+    Route::post('/insights/{id}/read', [\App\Http\Controllers\Api\AIInsightController::class, 'markRead']);
+    Route::post('/insights/read-all', [\App\Http\Controllers\Api\AIInsightController::class, 'markAllRead']);
+    
     Route::get('/ai/insights', [AIController::class, 'insights']);
     Route::post('/ai/chat', [AIController::class, 'chat']);
     Route::get('/workouts/{workout}/export', [ExportController::class, 'exportWorkout']);

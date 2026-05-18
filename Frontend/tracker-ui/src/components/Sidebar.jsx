@@ -50,6 +50,23 @@ export default function Sidebar({ onClose }) {
   const { user, logout } = useStore();
   const navigate = useNavigate();
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'U';
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const { data } = await api.get('/insights/unread-count');
+      setUnreadCount(data.unread_count || 0);
+    } catch (err) {
+      console.error('Error fetching unread insights count:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!user) return;
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleLogout = async () => {
     try { await api.post('/auth/logout'); } catch (_) {}
@@ -85,30 +102,35 @@ export default function Sidebar({ onClose }) {
               {group.title}
             </span>
             <div className="flex flex-col gap-1">
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  onClick={onClose}
-                  className={({ isActive }) => `
-                    flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group
-                    ${isActive 
-                      ? 'bg-primary/10 text-primary font-medium border border-primary/20' 
-                      : 'text-on-surface-variant/60 hover:bg-surface-bright hover:text-on-surface'}
-                  `}
-                >
-                  <item.icon className={`w-5 h-5 ${item.badge === 'AI' ? 'text-secondary' : ''}`} />
-                  <span className="text-sm">{item.label}</span>
-                  {item.badge && (
-                    <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      item.badge === 'AI' ? 'bg-secondary text-surface' : 'bg-primary text-white'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
-                </NavLink>
-              ))}
+              {group.items.map((item) => {
+                const badgeValue = item.to === '/insights' 
+                  ? (unreadCount > 0 ? String(unreadCount) : null) 
+                  : item.badge;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    onClick={onClose}
+                    className={({ isActive }) => `
+                      flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group
+                      ${isActive 
+                        ? 'bg-primary/10 text-primary font-medium border border-primary/20' 
+                        : 'text-on-surface-variant/60 hover:bg-surface-bright hover:text-on-surface'}
+                    `}
+                  >
+                    <item.icon className={`w-5 h-5 ${badgeValue === 'AI' ? 'text-secondary' : ''}`} />
+                    <span className="text-sm">{item.label}</span>
+                    {badgeValue && (
+                      <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        badgeValue === 'AI' ? 'bg-secondary text-surface' : 'bg-primary text-white'
+                      }`}>
+                        {badgeValue}
+                      </span>
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
           </div>
         ))}

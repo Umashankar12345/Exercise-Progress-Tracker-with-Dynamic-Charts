@@ -14,6 +14,10 @@ class Exercise extends Model
         'muscle_group',
         'equipment',
         'description',
+        'category',
+        'difficulty',
+        'youtube_url',
+        'instructions',
     ];
 
     public function workouts()

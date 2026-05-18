@@ -28,15 +28,15 @@ class AnalyzeWorkoutJob implements ShouldQueue
     {
         Log::info("AnalyzeWorkoutJob: starting for user {$this->userId}");
 
-        // 1. Build 30-day workout history
-        $history = Workout::with(['workoutExercises.workoutSets'])
+        // 1. Build workout history of the last 10 sessions
+        $history = Workout::with(['workoutExercises.workoutSets.workoutExercise.exercise'])
             ->where('user_id', $this->userId)
-            ->where('started_at', '>=', now()->subDays(30))
             ->latest()
+            ->limit(10)
             ->get()
             ->toArray();
 
-        // 2. Call Claude and parse response
+        // 2. Call Gemini and parse response
         $result = $aiService->analyzeProgress($history);
 
         if (!$result) {
@@ -44,14 +44,27 @@ class AnalyzeWorkoutJob implements ShouldQueue
             return;
         }
 
-        // 3. Cache for 24 hours — served on page load (no redundant API call)
+        // 3. Save insights to the database
+        if (!empty($result['insights'])) {
+            foreach ($result['insights'] as $insightData) {
+                \App\Models\AIInsight::create([
+                    'user_id' => $this->userId,
+                    'type' => $insightData['type'] ?? 'progressive_overload',
+                    'title' => $insightData['title'] ?? 'Training Insight',
+                    'content' => $insightData['content'] ?? ($insightData['text'] ?? ''),
+                    'is_read' => false,
+                ]);
+            }
+        }
+
+        // 4. Cache for 24 hours — served on page load (no redundant API call)
         Cache::put(
             "insights:{$this->userId}",
             $result,
             now()->addHours(24)
         );
 
-        // 4. Broadcast live via Reverb WebSocket → user's private channel
+        // 5. Broadcast live via Reverb WebSocket → user's private channel
         InsightReady::dispatch(
             userId:         $this->userId,
             insights:       $result['insights']       ?? [],

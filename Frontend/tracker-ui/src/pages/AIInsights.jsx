@@ -15,24 +15,50 @@ import {
   ChevronRight,
   Loader2
 } from 'lucide-react';
-import { useAIInsights } from '../hooks/useAIInsights';
+import api from '../api/axios';
 import useStore from '../store/useStore';
 
 const INSIGHT_TYPE_MAP = {
-  tip:     { color: 'text-secondary', bg: 'bg-secondary/10', border: 'border-secondary/20', icon: Lightbulb },
-  warning: { color: 'text-tertiary',  bg: 'bg-tertiary/10',  border: 'border-tertiary/20',  icon: AlertCircle },
-  alert:   { color: 'text-red-400',   bg: 'bg-red-500/10',   border: 'border-red-500/20',   icon: AlertCircle },
+  progressive_overload: { color: 'text-secondary font-bold', bg: 'bg-secondary/10', border: 'border-secondary/20', icon: TrendingUp, label: 'Progressive Overload' },
+  imbalance:            { color: 'text-tertiary font-bold',  bg: 'bg-tertiary/10',  border: 'border-tertiary/20',  icon: AlertCircle, label: 'Muscle Imbalance' },
+  recovery:             { color: 'text-purple-400 font-bold', bg: 'bg-purple-500/10', border: 'border-purple-500/20', icon: Clock, label: 'Recovery & Fatigue' },
 };
 
 export default function AIInsights() {
   const { user } = useStore();
-  const { insights, recommendation, status, generatedAt } = useAIInsights(user?.id);
+  const [dbInsights, setDbInsights] = useState([]);
+  const [recommendation, setRecommendation] = useState('');
+  const [generatedAt, setGeneratedAt] = useState('');
+  const [loading, setLoading] = useState(true);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState([
     { role: 'bot', text: "Hello! I've analyzed your recent chest session. Would you like to know how it impacts your weekly goal?" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef(null);
+
+  const fetchInsights = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get('/insights');
+      setDbInsights(data);
+      
+      // Also pull cached recommendation/strategy from the AI service endpoint
+      const cacheRes = await api.get('/ai/insights');
+      setRecommendation(cacheRes.data?.recommendation || '');
+      setGeneratedAt(cacheRes.data?.generated_at || '');
+    } catch (err) {
+      console.error('Error fetching insights:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchInsights();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -58,6 +84,23 @@ export default function AIInsights() {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await api.post('/insights/read-all');
+      fetchInsights();
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
+  };
+
+  const handleDismiss = async (id) => {
+    try {
+      await api.post(`/insights/${id}/read`);
+      fetchInsights();
+    } catch (err) {
+      console.error('Error marking insight as read:', err);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8 max-w-6xl mx-auto">
@@ -106,23 +149,35 @@ export default function AIInsights() {
               <Zap className="w-5 h-5 text-tertiary" />
               Latest Training Analysis
             </h2>
-            <button className="text-xs font-bold text-primary hover:underline">Mark all as read</button>
+            {dbInsights.some(x => !x.is_read) && (
+              <button 
+                onClick={handleMarkAllRead}
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Mark all as read
+              </button>
+            )}
           </div>
 
           <div className="space-y-4">
-            {insights.length === 0 ? (
+            {loading ? (
+              <div className="p-12 text-center glass-card space-y-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+                <p className="text-on-surface-variant font-medium">Crunching workout history...</p>
+              </div>
+            ) : dbInsights.length === 0 ? (
               <div className="p-12 text-center glass-card space-y-4">
                 <Bot className="w-12 h-12 text-on-surface-variant mx-auto opacity-20" />
                 <p className="text-on-surface-variant font-medium">No insights generated yet. Log your first workout to trigger analysis.</p>
               </div>
             ) : (
-              insights.map((item, i) => {
-                const config = INSIGHT_TYPE_MAP[item.type] || INSIGHT_TYPE_MAP.tip;
+              dbInsights.map((item, i) => {
+                const config = INSIGHT_TYPE_MAP[item.type] || { color: 'text-secondary font-bold', bg: 'bg-secondary/10', border: 'border-secondary/20', icon: Lightbulb, label: 'Training Insight' };
                 const Icon = config.icon;
                 return (
                   <div 
-                    key={i} 
-                    className={`glass-card p-6 border-l-4 ${config.border.replace('border-', 'border-l-')} hover:translate-x-1 transition-all duration-300 group`}
+                    key={item.id} 
+                    className={`glass-card p-6 border-l-4 ${config.border.replace('border-', 'border-l-')} hover:translate-x-1 transition-all duration-300 group ${item.is_read ? 'opacity-50' : ''}`}
                   >
                     <div className="flex gap-4">
                       <div className={`p-3 rounded-xl ${config.bg} h-fit`}>
@@ -131,20 +186,24 @@ export default function AIInsights() {
                       <div className="flex-1 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className={`text-[10px] font-black uppercase tracking-widest ${config.color}`}>
-                            {item.type} · Insight #{i+1}
+                            {config.label}
                           </span>
-                          <span className="text-[10px] font-medium text-on-surface-variant">2 hours ago</span>
+                          <span className="text-[10px] font-medium text-on-surface-variant">
+                            {new Date(item.created_at).toLocaleDateString()}
+                          </span>
                         </div>
-                        <p 
-                          className="text-on-surface font-medium leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: item.text }}
-                        />
+                        <p className="text-on-surface font-medium leading-relaxed">
+                          {item.content}
+                        </p>
                         <div className="flex items-center gap-4 pt-2">
-                          <button className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-1 group/btn">
-                            Apply to Plan
-                            <ChevronRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
-                          </button>
-                          <button className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest">Dismiss</button>
+                          {!item.is_read && (
+                            <button 
+                              onClick={() => handleDismiss(item.id)}
+                              className="text-[11px] font-black text-primary uppercase tracking-widest hover:underline"
+                            >
+                              Mark as Read
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

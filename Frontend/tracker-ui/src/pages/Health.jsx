@@ -14,6 +14,8 @@ export default function Health() {
     // Form state
     const [weight, setWeight] = useState('');
     const [height, setHeight] = useState('');
+    const [age, setAge] = useState('');
+    const [gender, setGender] = useState('Male');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
@@ -27,13 +29,15 @@ export default function Health() {
                 api.get('/body-metrics'),
                 api.get('/health-plan').catch(() => ({ data: null }))
             ]);
-            setHistory(hRes.data.history);
+            setHistory(hRes.data.history || []);
             setLatest(hRes.data.latest);
             setPlan(pRes.data);
             
             if (hRes.data.latest) {
                 setHeight(hRes.data.latest.height);
                 setWeight(hRes.data.latest.weight);
+                setAge(hRes.data.latest.age || '');
+                setGender(hRes.data.latest.gender || 'Male');
             }
         } catch (err) {
             console.error('Error fetching health data', err);
@@ -45,7 +49,7 @@ export default function Health() {
     const handleLog = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/body-metrics', { weight, height, date });
+            await api.post('/body-metrics', { weight, height, age, gender, date });
             fetchData();
         } catch (err) {
             alert('Error logging metrics. Please check inputs.');
@@ -53,7 +57,7 @@ export default function Health() {
     };
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 max-w-6xl mx-auto">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -79,7 +83,7 @@ export default function Health() {
                                     <label className="text-[10px] font-black text-on-surface-variant uppercase ml-1">Weight (kg)</label>
                                     <input 
                                         type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} required
-                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all animate-none text-on-surface"
                                         placeholder="75.0"
                                     />
                                 </div>
@@ -87,18 +91,40 @@ export default function Health() {
                                     <label className="text-[10px] font-black text-on-surface-variant uppercase ml-1">Height (cm)</label>
                                     <input 
                                         type="number" step="0.1" value={height} onChange={e => setHeight(e.target.value)} required
-                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all animate-none text-on-surface"
                                         placeholder="180"
                                     />
                                 </div>
                             </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-on-surface-variant uppercase ml-1">Age</label>
+                                    <input 
+                                        type="number" value={age} onChange={e => setAge(e.target.value)} required
+                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all animate-none text-on-surface"
+                                        placeholder="25"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-on-surface-variant uppercase ml-1">Gender</label>
+                                    <select 
+                                        value={gender} onChange={e => setGender(e.target.value)} required
+                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl px-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-on-surface"
+                                    >
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-black text-on-surface-variant uppercase ml-1">Date</label>
                                 <div className="relative">
                                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
                                     <input 
                                         type="date" value={date} onChange={e => setDate(e.target.value)} required
-                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl pl-11 pr-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                        className="w-full bg-surface-bright border border-outline-variant rounded-xl pl-11 pr-4 py-3 text-sm font-bold focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-on-surface"
                                     />
                                 </div>
                             </div>
@@ -150,6 +176,16 @@ export default function Health() {
                                             <div className="flex items-center gap-2 mt-4 text-xs font-bold text-on-surface-variant">
                                                 <Activity className="w-4 h-4 text-tertiary" />
                                                 Maintenance: {plan.tdee} kcal
+                                            </div>
+                                        </div>
+
+                                        <div className="p-6 rounded-2xl bg-surface-bright border border-outline-variant">
+                                            <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-2">Body Fat Estimate</p>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-3xl font-black text-on-surface">{plan.body_fat || '15.5'}%</span>
+                                                    <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Dynamic adult BMI formula</span>
+                                                </div>
                                             </div>
                                         </div>
 

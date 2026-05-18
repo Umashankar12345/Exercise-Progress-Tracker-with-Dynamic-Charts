@@ -13,7 +13,8 @@ use App\Http\Controllers\Api\ProgressPhotoController;
 use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\DailyStepController;
-use App\Http\Controllers\Api\BodyMetricController;
+use App\Http\Controllers\Api\HealthMetricController;
+use App\Http\Controllers\Api\WorkoutPlanController;
 
 Route::get('/login', function () {
     return response()->json(['message' => 'Unauthenticated.'], 401);
@@ -40,9 +41,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/daily-steps', [DailyStepController::class, 'store']);
 
     // Health & Body Metrics
-    Route::get('/body-metrics', [BodyMetricController::class, 'index']);
-    Route::post('/body-metrics', [BodyMetricController::class, 'store']);
-    Route::get('/health-plan', [BodyMetricController::class, 'getPlan']);
+    Route::get('/body-metrics', [HealthMetricController::class, 'index']);
+    Route::post('/body-metrics', [HealthMetricController::class, 'store']);
+    Route::get('/health-plan', [HealthMetricController::class, 'getPlan']);
+
+    // Workout Plan
+    Route::get('/workout-plan', [WorkoutPlanController::class, 'getPlan']);
+    Route::post('/workout-plan/generate', [WorkoutPlanController::class, 'regeneratePlan']);
 
     Route::get('/user/streak', [UserController::class, 'streak']);
     Route::get('/prs', [WorkoutController::class, 'prs']);

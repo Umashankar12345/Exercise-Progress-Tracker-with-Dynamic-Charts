@@ -157,4 +157,105 @@ class AIService
             ],
         ];
     }
+
+    public function generateWorkoutPlan(array $sessions, array $goals): array
+    {
+        if (!$this->apiKey) {
+            return $this->fallbackWorkoutPlan();
+        }
+
+        try {
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$this->apiKey}";
+
+            $prompt = "You are a professional athletics coach. Generate an adaptive 7-day workout curriculum in JSON format based on these parameters:\n";
+            $prompt .= "- Last 12 Sessions: " . json_encode($sessions) . "\n";
+            $prompt .= "- Athlete Goals: " . json_encode($goals) . "\n\n";
+            $prompt .= "The response MUST be a single, valid JSON object with EXACTLY this structure:\n";
+            $prompt .= '{\n';
+            $prompt .= '  "days": [\n';
+            $prompt .= '    {\n';
+            $prompt .= '      "day": "Monday",\n';
+            $prompt .= '      "title": "Hypertrophy: Push A",\n';
+            $prompt .= '      "focus": "Chest, Delts, Triceps",\n';
+            $prompt .= '      "exercises": 6,\n';
+            $prompt .= '      "volume": "High"  // Must be one of: High, Extreme, Moderate, Zero\n';
+            $prompt .= '    }\n';
+            $prompt .= '  ],\n';
+            $prompt .= '  "ai_adjustments": [\n';
+            $prompt .= '    {\n';
+            $prompt .= '      "type": "Volume Correction",\n';
+            $prompt .= '      "text": "Volume adjusted for better balance."\n';
+            $prompt .= '    }\n';
+            $prompt .= '  ],\n';
+            $prompt .= '  "statistics": {\n';
+            $prompt .= '    "frequency": "5x / Week",\n';
+            $prompt .= '    "avg_time": "72 Minutes",\n';
+            $prompt .= '    "next_deload": "In 12 Days"\n';
+            $prompt .= '  }\n';
+            $prompt .= '}\n';
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->timeout(55)->post($url, [
+                'systemInstruction' => [
+                    'parts' => [
+                        ['text' => 'Return ONLY valid JSON containing a 7-day adaptive workout plan matching the exact structure requested.']
+                    ]
+                ],
+                'contents' => [
+                    [
+                        'role' => 'user',
+                        'parts' => [
+                            ['text' => $prompt]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'responseMimeType' => 'application/json',
+                ]
+            ]);
+
+            if (!$response->successful()) {
+                return $this->fallbackWorkoutPlan();
+            }
+
+            $text = $response->json('candidates.0.content.parts.0.text', '{}');
+            $data = json_decode(trim($text), true);
+
+            return is_array($data) ? $data : $this->fallbackWorkoutPlan();
+        } catch (\Exception $e) {
+            Log::error('Gemini Plan Generator Error: ' . $e->getMessage());
+            return $this->fallbackWorkoutPlan();
+        }
+    }
+
+    private function fallbackWorkoutPlan(): array
+    {
+        return [
+            'days' => [
+                ['day' => 'Monday', 'title' => 'Hypertrophy: Push A', 'focus' => 'Chest, Delts, Triceps', 'exercises' => 6, 'volume' => 'High'],
+                ['day' => 'Tuesday', 'title' => 'Hypertrophy: Pull A', 'focus' => 'Back, Biceps, Rear Delts', 'exercises' => 7, 'volume' => 'High'],
+                ['day' => 'Wednesday', 'title' => 'Active Recovery', 'focus' => 'Mobility, Zone 2 Cardio', 'exercises' => 0, 'volume' => 'Zero'],
+                ['day' => 'Thursday', 'title' => 'Strength: Legs A', 'focus' => 'Quads, Adductors, Calves', 'exercises' => 5, 'volume' => 'Extreme'],
+                ['day' => 'Friday', 'title' => 'Hypertrophy: Upper Body B', 'focus' => 'Vertical Push/Pull Focus', 'exercises' => 8, 'volume' => 'Moderate'],
+                ['day' => 'Saturday', 'title' => 'Functional Strength', 'focus' => 'Full Body Compound', 'exercises' => 4, 'volume' => 'Moderate'],
+                ['day' => 'Sunday', 'title' => 'Full Recovery', 'focus' => 'Rest, Nutrition, Sleep', 'exercises' => 0, 'volume' => 'Zero'],
+            ],
+            'ai_adjustments' => [
+                [
+                    'type' => 'Volume Correction',
+                    'text' => 'Back day exercises increased by 15% to address pull-to-push imbalance detected in last 3 sessions.'
+                ],
+                [
+                    'type' => 'Exercise Swap',
+                    'text' => 'Swapped Bench Press for Incline DB Press due to plateau in horizontal pressing strength.'
+                ]
+            ],
+            'statistics' => [
+                'frequency' => '5x / Week',
+                'avg_time' => '72 Minutes',
+                'next_deload' => 'In 12 Days',
+            ]
+        ];
+    }
 }

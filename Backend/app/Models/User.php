@@ -51,4 +51,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(DailyStep::class);
     }
+
+    public function bodyMetrics()
+    {
+        return $this->hasMany(BodyMetric::class);
+    }
+
+    public function workoutPlans()
+    {
+        return $this->hasMany(WorkoutPlan::class);
+    }
+
+    public function healthMetrics()
+    {
+        return $this->hasMany(HealthMetric::class);
+    }
 }

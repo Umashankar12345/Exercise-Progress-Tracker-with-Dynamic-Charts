@@ -177,7 +177,6 @@ html.light-mode {
 html.light-mode img,
 html.light-mode video,
 html.light-mode canvas,
-html.light-mode .recharts-wrapper,
 html.light-mode .leaflet-container {
   filter: invert(1) hue-rotate(180deg);
 }

@@ -135,7 +135,7 @@ export default function Navbar({ onMenuClick }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1.5 md:gap-4">
         <div className="relative group hidden md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant group-focus-within:text-primary transition-colors" />
           <input 
@@ -145,15 +145,15 @@ export default function Navbar({ onMenuClick }) {
           />
         </div>
 
-        <div className="flex items-center gap-2 border-l border-outline-variant pl-4">
+        <div className="flex items-center gap-1 sm:gap-2 border-l border-outline-variant pl-2 sm:pl-4">
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all relative group"
+              className="p-2 md:p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all relative group"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-4.5 h-4.5 md:w-5 md:h-5" />
               {unreadCount > 0 && (
-                <div className="absolute top-1 right-1 w-4.5 h-4.5 bg-red-500 rounded-full border border-surface text-[9px] font-black text-white flex items-center justify-center animate-pulse">
+                <div className="absolute top-0.5 right-0.5 w-4 h-4 bg-red-500 rounded-full border border-surface text-[8px] font-black text-white flex items-center justify-center animate-pulse">
                   {unreadCount}
                 </div>
               )}
@@ -206,35 +206,36 @@ export default function Navbar({ onMenuClick }) {
           
           <button 
             onClick={handleShare}
-            className="p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all"
+            className="hidden sm:block p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all"
           >
             <Share2 className="w-5 h-5" />
           </button>
           
           <button 
             onClick={toggleTheme}
-            className="p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all ml-2 shadow-inner"
+            className="p-2 md:p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all ml-1 sm:ml-2 shadow-inner"
             title="Toggle Light/Dark Mode"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
+            {theme === 'dark' ? <Sun className="w-4.5 h-4.5 md:w-5 md:h-5 text-yellow-400" /> : <Moon className="w-4.5 h-4.5 md:w-5 md:h-5 text-indigo-400" />}
           </button>
         </div>
 
         <button 
           onClick={() => navigate('/log')}
-          className="ml-2 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white dark:text-white px-3 md:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          className="ml-1 sm:ml-2 flex items-center gap-1.5 sm:gap-2 bg-primary hover:bg-primary/90 text-white dark:text-white px-2.5 sm:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
         >
-          <Plus className="w-4 h-4 stroke-[3]" />
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
           <span className="hidden sm:inline">NEW SESSION</span>
           <span className="sm:hidden">NEW</span>
         </button>
 
         <button 
           onClick={() => setShowLogoutConfirm(true)}
-          className="ml-2 flex items-center gap-2 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-red-500/30"
+          className="ml-1 sm:ml-2 flex items-center gap-1.5 sm:gap-2 bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white dark:bg-red-500/10 dark:border-red-500/20 dark:text-red-400 dark:hover:bg-red-500 dark:hover:text-white px-2.5 sm:px-4 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-red-500/5 md:shadow-red-500/30"
+          title="Log Out"
         >
-          <LogOut className="w-4 h-4 stroke-[3]" />
-          <span className="hidden md:inline">LOG OUT</span>
+          <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+          <span className="hidden sm:inline">LOG OUT</span>
         </button>
       </div>
     </header>

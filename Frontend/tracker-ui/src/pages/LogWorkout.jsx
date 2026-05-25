@@ -354,8 +354,8 @@ export default function LogWorkout() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Header */}
-                  <div className="grid grid-cols-[40px_90px_1fr_1fr_120px_60px] gap-3 px-4 text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">
+                  {/* Header - Desktop Only */}
+                  <div className="hidden md:grid grid-cols-[40px_90px_1fr_1fr_120px_60px] gap-3 px-4 text-[10px] font-black text-on-surface-variant uppercase tracking-tighter">
                     <span className="text-center">Set</span>
                     <span>Type</span>
                     <span className="text-center">Reps / Dist</span>
@@ -368,127 +368,271 @@ export default function LogWorkout() {
                   {sets.map((s, idx) => {
                     const isCardio = s.type === 'cardio';
                     return (
-                      <div 
-                        key={s.id} 
-                        className={`grid grid-cols-[40px_90px_1fr_1fr_120px_60px] gap-3 items-center p-3 rounded-xl border border-outline-variant bg-surface-container transition-all hover:border-outline ${
-                          idx === sets.length - 1 ? 'ring-1 ring-primary/20 bg-primary/5 border-primary/20' : ''
-                        }`}
-                      >
-                        <div className="text-center text-xs font-black text-on-surface-variant">{idx + 1}</div>
-                        
-                        {/* Type Selector */}
-                        <div>
-                          <select
-                            value={s.type || 'strength'}
-                            onChange={e => updateSet(s.id, 'type', e.target.value)}
-                            className="bg-surface-bright border border-outline-variant rounded-lg py-1.5 px-2 text-xs font-bold text-on-surface focus:outline-none w-full cursor-pointer"
-                          >
-                            <option value="strength">Strength</option>
-                            <option value="cardio">Cardio</option>
-                          </select>
+                      <React.Fragment key={s.id}>
+                        {/* Desktop Row View */}
+                        <div 
+                          className={`hidden md:grid grid-cols-[40px_90px_1fr_1fr_120px_60px] gap-3 items-center p-3 rounded-xl border border-outline-variant bg-surface-container transition-all hover:border-outline ${
+                            idx === sets.length - 1 ? 'ring-1 ring-primary/20 bg-primary/5 border-primary/20' : ''
+                          }`}
+                        >
+                          <div className="text-center text-xs font-black text-on-surface-variant">{idx + 1}</div>
+                          
+                          {/* Type Selector */}
+                          <div>
+                            <select
+                              value={s.type || 'strength'}
+                              onChange={e => updateSet(s.id, 'type', e.target.value)}
+                              className="bg-surface-bright border border-outline-variant rounded-lg py-1.5 px-2 text-xs font-bold text-on-surface focus:outline-none w-full cursor-pointer"
+                            >
+                              <option value="strength">Strength</option>
+                              <option value="cardio">Cardio</option>
+                            </select>
+                          </div>
+
+                          {/* Reps or Distance */}
+                          <div className="flex flex-col gap-1.5 w-full">
+                            {isCardio ? (
+                              <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                                <button type="button" onClick={() => updateSet(s.id, 'distance', Math.max(0, parseFloat(s.distance || 0) - 0.5).toFixed(1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                                <input 
+                                  type="number" 
+                                  placeholder="0.0"
+                                  value={s.distance}
+                                  step="0.1"
+                                  onChange={e => updateSet(s.id, 'distance', e.target.value)}
+                                  className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#00E5FF] outline-none"
+                                />
+                                <button type="button" onClick={() => updateSet(s.id, 'distance', (parseFloat(s.distance || 0) + 0.5).toFixed(1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                                <button type="button" onClick={() => updateSet(s.id, 'reps', Math.max(0, parseInt(s.reps || 10) - 1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                                <input 
+                                  type="number" 
+                                  placeholder={ghostPlaceholder?.reps ? `${ghostPlaceholder.reps}` : "10"}
+                                  value={s.reps}
+                                  onChange={e => updateSet(s.id, 'reps', e.target.value)}
+                                  className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#00E5FF] outline-none"
+                                />
+                                <button type="button" onClick={() => updateSet(s.id, 'reps', parseInt(s.reps || 10) + 1)} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Weight or Duration */}
+                          <div className="flex flex-col gap-1.5 w-full relative">
+                            {isCardio ? (
+                              <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                                <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', Math.max(0, parseInt(s.duration_seconds || 0) - 30))} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                                <input 
+                                  type="number" 
+                                  placeholder="Secs"
+                                  value={s.duration_seconds}
+                                  onChange={e => updateSet(s.id, 'duration_seconds', e.target.value)}
+                                  className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#7C3AED] outline-none"
+                                />
+                                <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', parseInt(s.duration_seconds || 0) + 30)} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors relative">
+                                <button type="button" onClick={() => updateSet(s.id, 'weight', Math.max(0, parseFloat(s.weight || 60) - 2.5))} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                                <input 
+                                  type="number" 
+                                  placeholder={ghostPlaceholder?.weight ? `${ghostPlaceholder.weight}` : "60"}
+                                  value={s.weight}
+                                  onChange={e => updateSet(s.id, 'weight', e.target.value)}
+                                  className={`w-full bg-transparent py-2 pr-6 text-center text-sm font-bold outline-none ${
+                                    s.weight > 100 ? 'text-tertiary' : 'text-[#00E5FF]'
+                                  }`}
+                                />
+                                <button type="button" onClick={() => updateSet(s.id, 'weight', parseFloat(s.weight || 60) + 2.5)} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveCalculatorWeight(s.weight || 20)}
+                                  className="absolute right-7 text-on-surface-variant hover:text-primary transition-colors p-1"
+                                  title="Plate Calculator"
+                                >
+                                  <Calculator className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Volume or Pace */}
+                          <div className="text-center text-xs font-black text-on-surface-variant">
+                            {isCardio ? (
+                              s.distance && s.duration_seconds ? (
+                                `${((s.duration_seconds / 60) / s.distance).toFixed(2)} min/km`
+                              ) : (
+                                '0.00 min/km'
+                              )
+                            ) : (
+                              `${((s.reps || 0) * (s.weight || 0)).toLocaleString()} kg`
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-center gap-2">
+                            <button 
+                              type="button"
+                              onClick={() => setRestTimer(90)}
+                              title="Set Done (Start 90s Rest)"
+                              className="flex items-center justify-center text-on-surface-variant hover:text-secondary transition-colors"
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              type="button"
+                              onClick={() => delSet(s.id)}
+                              title="Delete Set"
+                              className="flex items-center justify-center text-on-surface-variant hover:text-red-400 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Reps or Distance */}
-                        <div className="flex flex-col gap-1.5 w-full">
-                          {isCardio ? (
-                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
-                              <button type="button" onClick={() => updateSet(s.id, 'distance', Math.max(0, parseFloat(s.distance || 0) - 0.5).toFixed(1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
-                              <input 
-                                type="number" 
-                                placeholder="0.0"
-                                value={s.distance}
-                                step="0.1"
-                                onChange={e => updateSet(s.id, 'distance', e.target.value)}
-                                className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#00E5FF] outline-none"
-                              />
-                              <button type="button" onClick={() => updateSet(s.id, 'distance', (parseFloat(s.distance || 0) + 0.5).toFixed(1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                        {/* Mobile Card View */}
+                        <div 
+                          className={`md:hidden flex flex-col gap-4 p-4 rounded-2xl border border-outline-variant bg-surface-container transition-all hover:border-outline ${
+                            idx === sets.length - 1 ? 'ring-2 ring-primary/30 bg-primary/5 border-primary/20' : ''
+                          }`}
+                        >
+                          {/* Top Bar: Set Number + Type Selector */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-surface-bright border border-outline-variant text-[11px] font-black text-on-surface-variant">
+                                {idx + 1}
+                              </span>
+                              <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Set</span>
                             </div>
-                          ) : (
-                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
-                              <button type="button" onClick={() => updateSet(s.id, 'reps', Math.max(0, parseInt(s.reps || 10) - 1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
-                              <input 
-                                type="number" 
-                                placeholder={ghostPlaceholder?.reps ? `${ghostPlaceholder.reps}` : "10"}
-                                value={s.reps}
-                                onChange={e => updateSet(s.id, 'reps', e.target.value)}
-                                className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#00E5FF] outline-none"
-                              />
-                              <button type="button" onClick={() => updateSet(s.id, 'reps', parseInt(s.reps || 10) + 1)} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Weight or Duration */}
-                        <div className="flex flex-col gap-1.5 w-full relative">
-                          {isCardio ? (
-                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
-                              <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', Math.max(0, parseInt(s.duration_seconds || 0) - 30))} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
-                              <input 
-                                type="number" 
-                                placeholder="Secs"
-                                value={s.duration_seconds}
-                                onChange={e => updateSet(s.id, 'duration_seconds', e.target.value)}
-                                className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#7C3AED] outline-none"
-                              />
-                              <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', parseInt(s.duration_seconds || 0) + 30)} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors relative">
-                              <button type="button" onClick={() => updateSet(s.id, 'weight', Math.max(0, parseFloat(s.weight || 60) - 2.5))} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
-                              <input 
-                                type="number" 
-                                placeholder={ghostPlaceholder?.weight ? `${ghostPlaceholder.weight}` : "60"}
-                                value={s.weight}
-                                onChange={e => updateSet(s.id, 'weight', e.target.value)}
-                                className={`w-full bg-transparent py-2 pr-6 text-center text-sm font-bold outline-none ${
-                                  s.weight > 100 ? 'text-tertiary' : 'text-[#00E5FF]'
-                                }`}
-                              />
-                              <button type="button" onClick={() => updateSet(s.id, 'weight', parseFloat(s.weight || 60) + 2.5)} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
-                              <button
-                                type="button"
-                                onClick={() => setActiveCalculatorWeight(s.weight || 20)}
-                                className="absolute right-7 text-on-surface-variant hover:text-primary transition-colors p-1"
-                                title="Plate Calculator"
+                            
+                            <div className="w-32 shrink-0">
+                              <select
+                                value={s.type || 'strength'}
+                                onChange={e => updateSet(s.id, 'type', e.target.value)}
+                                className="bg-surface-bright border border-outline-variant rounded-lg py-1.5 px-2 text-xs font-bold text-on-surface focus:outline-none w-full cursor-pointer"
                               >
-                                <Calculator className="w-3.5 h-3.5" />
+                                <option value="strength">Strength</option>
+                                <option value="cardio">Cardio</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Middle Row: Inputs */}
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Input 1: Reps / Distance */}
+                            <div className="flex flex-col gap-1">
+                              <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider pl-1">
+                                {isCardio ? 'Distance' : 'Reps'}
+                              </span>
+                              {isCardio ? (
+                                <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                                  <button type="button" onClick={() => updateSet(s.id, 'distance', Math.max(0, parseFloat(s.distance || 0) - 0.5).toFixed(1))} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">-</button>
+                                  <input 
+                                    type="number" 
+                                    placeholder="0.0"
+                                    value={s.distance}
+                                    step="0.1"
+                                    onChange={e => updateSet(s.id, 'distance', e.target.value)}
+                                    className="w-full bg-transparent py-1.5 text-center text-xs font-bold text-[#00E5FF] outline-none"
+                                  />
+                                  <button type="button" onClick={() => updateSet(s.id, 'distance', (parseFloat(s.distance || 0) + 0.5).toFixed(1))} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">+</button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                                  <button type="button" onClick={() => updateSet(s.id, 'reps', Math.max(0, parseInt(s.reps || 10) - 1))} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">-</button>
+                                  <input 
+                                    type="number" 
+                                    placeholder={ghostPlaceholder?.reps ? `${ghostPlaceholder.reps}` : "10"}
+                                    value={s.reps}
+                                    onChange={e => updateSet(s.id, 'reps', e.target.value)}
+                                    className="w-full bg-transparent py-1.5 text-center text-xs font-bold text-[#00E5FF] outline-none"
+                                  />
+                                  <button type="button" onClick={() => updateSet(s.id, 'reps', parseInt(s.reps || 10) + 1)} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">+</button>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Input 2: Weight / Duration */}
+                            <div className="flex flex-col gap-1 relative">
+                              <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider pl-1">
+                                {isCardio ? 'Seconds' : 'Weight (kg)'}
+                              </span>
+                              {isCardio ? (
+                                <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                                  <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', Math.max(0, parseInt(s.duration_seconds || 0) - 30))} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">-</button>
+                                  <input 
+                                    type="number" 
+                                    placeholder="Secs"
+                                    value={s.duration_seconds}
+                                    onChange={e => updateSet(s.id, 'duration_seconds', e.target.value)}
+                                    className="w-full bg-transparent py-1.5 text-center text-xs font-bold text-[#7C3AED] outline-none"
+                                  />
+                                  <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', parseInt(s.duration_seconds || 0) + 30)} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">+</button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors relative">
+                                  <button type="button" onClick={() => updateSet(s.id, 'weight', Math.max(0, parseFloat(s.weight || 60) - 2.5))} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">-</button>
+                                  <input 
+                                    type="number" 
+                                    placeholder={ghostPlaceholder?.weight ? `${ghostPlaceholder.weight}` : "60"}
+                                    value={s.weight}
+                                    onChange={e => updateSet(s.id, 'weight', e.target.value)}
+                                    className={`w-full bg-transparent py-1.5 pr-6 text-center text-xs font-bold outline-none ${
+                                      s.weight > 100 ? 'text-tertiary' : 'text-[#00E5FF]'
+                                    }`}
+                                  />
+                                  <button type="button" onClick={() => updateSet(s.id, 'weight', parseFloat(s.weight || 60) + 2.5)} className="px-2 py-1.5 text-on-surface hover:bg-white/5 font-black text-xs">+</button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveCalculatorWeight(s.weight || 20)}
+                                    className="absolute right-7 text-on-surface-variant hover:text-primary transition-colors p-1"
+                                    title="Plate Calculator"
+                                  >
+                                    <Calculator className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Bottom Row: Volume/Pace + Actions */}
+                          <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-1">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[8px] font-black text-white/35 uppercase tracking-widest">Volume / Pace</span>
+                              <span className="text-xs font-black text-primary">
+                                {isCardio ? (
+                                  s.distance && s.duration_seconds ? (
+                                    `${((s.duration_seconds / 60) / s.distance).toFixed(2)} min/km`
+                                  ) : (
+                                    '0.00 min/km'
+                                  )
+                                ) : (
+                                  `${((s.reps || 0) * (s.weight || 0)).toLocaleString()} kg`
+                                )}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <button 
+                                type="button"
+                                onClick={() => setRestTimer(90)}
+                                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-secondary/15 border border-secondary/20 text-[9px] font-black text-secondary uppercase tracking-wider hover:bg-secondary/20 transition-all"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Rest
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => delSet(s.id)}
+                                className="flex items-center justify-center w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
-                          )}
+                          </div>
                         </div>
-
-                        {/* Volume or Pace */}
-                        <div className="text-center text-xs font-black text-on-surface-variant">
-                          {isCardio ? (
-                            s.distance && s.duration_seconds ? (
-                              `${((s.duration_seconds / 60) / s.distance).toFixed(2)} min/km`
-                            ) : (
-                              '0.00 min/km'
-                            )
-                          ) : (
-                            `${((s.reps || 0) * (s.weight || 0)).toLocaleString()} kg`
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-center gap-2">
-                          <button 
-                            type="button"
-                            onClick={() => setRestTimer(90)}
-                            title="Set Done (Start 90s Rest)"
-                            className="flex items-center justify-center text-on-surface-variant hover:text-secondary transition-colors"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => delSet(s.id)}
-                            title="Delete Set"
-                            className="flex items-center justify-center text-on-surface-variant hover:text-red-400 transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
+                      </React.Fragment>
                     );
                   })}
                 </div>

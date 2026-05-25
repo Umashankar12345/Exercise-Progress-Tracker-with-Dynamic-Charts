@@ -6,13 +6,21 @@ import useStore from '../../store/useStore';
 
 export default function HeroSection({ onStartWorkout, activeSession }) {
   const { user } = useStore();
+  
+  const hour = new Date().getHours();
+  let greeting = 'Good Evening';
+  if (hour < 12) greeting = 'Good Morning';
+  else if (hour < 18) greeting = 'Good Afternoon';
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([
     { role: 'ai', text: "I'm Jarvis for Fitness. What's our goal for today?" }
   ]);
   const [isAiTyping, setIsAiTyping] = useState(false);
-  const [stats, setStats] = useState({ totalCalories: 0, water: 0, totalWorkouts: 0, steps: 0, streak: 0, sleep: 7.5 });
+  const [stats, setStats] = useState({ totalCalories: 0, water: 0, totalWorkouts: 0, steps: 0, streak: 0, sleep: 0 });
+  const [isHealthLogOpen, setIsHealthLogOpen] = useState(false);
+  const [healthForm, setHealthForm] = useState({ sleep_hours: '', water_intake: '' });
   const [dnaClass, setDnaClass] = useState('Balanced Human');
 
   useEffect(() => {
@@ -21,9 +29,9 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
         totalCalories: res.data.total_calories || 0,
         water: res.data.avg_water || 0,
         totalWorkouts: res.data.total_workouts || 0,
-        steps: res.data.steps || 8500,
+        steps: res.data.steps || 0,
         streak: res.data.streak || 0,
-        sleep: res.data.avg_sleep || 7.5
+        sleep: res.data.avg_sleep || 0
       });
     }).catch(e => console.error("Error loading dashboard analytics", e));
 
@@ -54,6 +62,25 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
       setChatHistory(prev => [...prev, { role: 'ai', text: "Connection to AI core failed." }]);
     } finally {
       setIsAiTyping(false);
+    }
+  };
+
+  const handleLogHealth = async () => {
+    try {
+      await api.post('/body-metrics', {
+        date: new Date().toISOString().split('T')[0],
+        sleep_hours: Number(healthForm.sleep_hours),
+        water_intake: Number(healthForm.water_intake)
+      });
+      setStats(prev => ({ 
+        ...prev, 
+        sleep: Number(healthForm.sleep_hours) || prev.sleep, 
+        water: Number(healthForm.water_intake) || prev.water 
+      }));
+      setIsHealthLogOpen(false);
+      setHealthForm({ sleep_hours: '', water_intake: '' });
+    } catch (err) {
+      console.error("Error logging health metrics", err);
     }
   };
   return (
@@ -87,7 +114,7 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50 mb-4 tracking-tighter"
           >
-            Good Evening,<br />{user?.name || 'Athlete'} <span className="text-[#00E5FF] text-2xl md:text-3xl font-black tracking-widest uppercase block mt-2">[{dnaClass}]</span>
+            {greeting},<br />{user?.name || 'Athlete'}
           </motion.h1>
  
           <motion.p 
@@ -96,7 +123,9 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
             transition={{ delay: 0.2 }}
             className="text-v2-soft-gray text-lg max-w-lg mb-8 leading-relaxed"
           >
-            Your average sleep is {stats.sleep}h. You are primed for a heavy push session today. Let's crush those goals.
+            {stats.sleep > 0 
+              ? `Your average sleep is ${stats.sleep}h. You are primed for a heavy push session today. Let's crush those goals.`
+              : `Your sleep and hydration data isn't tracked yet. Log your health below.`}
           </motion.p>
  
           <motion.div 
@@ -123,6 +152,12 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
               className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-white font-black uppercase tracking-widest text-sm flex items-center gap-2"
             >
               <Bot className="w-4 h-4 text-[#7C3AED]" /> Ask AI Coach
+            </button>
+            <button 
+              onClick={() => setIsHealthLogOpen(true)}
+              className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-[#00F5A0]/20 text-white font-black uppercase tracking-widest text-sm flex items-center gap-2 shadow-[0_0_15px_rgba(0,245,160,0.1)]"
+            >
+              <Droplet className="w-4 h-4 text-[#00F5A0]" /> Log Health
             </button>
           </motion.div>
         </div>
@@ -239,6 +274,65 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
                     <Send className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Health Logging Modal Overlay */}
+      <AnimatePresence>
+        {isHealthLogOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ y: 50, scale: 0.95 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 50, scale: 0.95 }}
+              className="w-full max-w-sm bg-[#0F172A] border border-[#00F5A0]/30 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(0,245,160,0.15)] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-gradient-to-r from-[#00F5A0]/10 to-transparent">
+                <h3 className="text-white font-black uppercase tracking-widest text-sm flex items-center gap-2">
+                  <Droplet className="w-4 h-4 text-[#00F5A0]" /> Log Daily Health
+                </h3>
+                <button onClick={() => setIsHealthLogOpen(false)} className="p-2 text-v2-soft-gray hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest text-v2-soft-gray font-bold">Sleep (Hours)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={healthForm.sleep_hours}
+                    onChange={(e) => setHealthForm({...healthForm, sleep_hours: e.target.value})}
+                    placeholder="e.g. 7.5"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-[#00F5A0]/50 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest text-v2-soft-gray font-bold">Water Intake (Liters)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={healthForm.water_intake}
+                    onChange={(e) => setHealthForm({...healthForm, water_intake: e.target.value})}
+                    placeholder="e.g. 2.5"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:outline-none focus:border-[#00F5A0]/50 transition-colors"
+                  />
+                </div>
+                <button 
+                  onClick={handleLogHealth}
+                  className="w-full py-4 rounded-xl bg-[#00F5A0] hover:bg-[#00D68A] text-black font-black uppercase tracking-widest text-sm transition-colors shadow-[0_0_20px_rgba(0,245,160,0.3)]"
+                >
+                  Save Metrics
+                </button>
               </div>
             </motion.div>
           </motion.div>

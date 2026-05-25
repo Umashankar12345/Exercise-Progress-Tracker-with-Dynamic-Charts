@@ -3,23 +3,13 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { Flame } from 'lucide-react';
 import api from '../../api/axios';
 
-const FALLBACK = [
-  { name: 'Mon', kcal: 0 },
-  { name: 'Tue', kcal: 0 },
-  { name: 'Wed', kcal: 0 },
-  { name: 'Thu', kcal: 0 },
-  { name: 'Fri', kcal: 0 },
-  { name: 'Sat', kcal: 0 },
-  { name: 'Sun', kcal: 0 },
-];
-
 const DAY_MAP = {
   Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed',
   Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun'
 };
 
 export default function CaloriesBurnedChart() {
-  const [data, setData] = useState(FALLBACK);
+  const [data, setData] = useState([]);
   const [totalCalories, setTotalCalories] = useState(0);
 
   useEffect(() => {
@@ -55,22 +45,29 @@ export default function CaloriesBurnedChart() {
       </div>
 
       <div className="w-full h-[180px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-            <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
-            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} axisLine={false} tickLine={false} />
-            <Tooltip 
-              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-              contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(239,68,68,0.3)', borderRadius: '12px' }}
-              itemStyle={{ color: '#EF4444', fontSize: '12px', fontWeight: 'bold' }}
-            />
-            <Bar dataKey="kcal" radius={[6, 6, 6, 6]}>
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.kcal === maxKcal ? '#EF4444' : 'rgba(239,68,68,0.3)'} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <XAxis dataKey="name" stroke="rgba(255,255,255,0.2)" fontSize={10} tickMargin={10} axisLine={false} tickLine={false} />
+              <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} axisLine={false} tickLine={false} />
+              <Tooltip 
+                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(239,68,68,0.3)', borderRadius: '12px' }}
+                itemStyle={{ color: '#EF4444', fontSize: '12px', fontWeight: 'bold' }}
+              />
+              <Bar dataKey="kcal" radius={[6, 6, 6, 6]}>
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.kcal === maxKcal ? '#EF4444' : 'rgba(239,68,68,0.3)'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
+            <Flame className="w-8 h-8 opacity-20" />
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
+          </div>
+        )}
       </div>
     </div>
   );

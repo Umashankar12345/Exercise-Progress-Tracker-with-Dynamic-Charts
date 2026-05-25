@@ -32,14 +32,7 @@ function buildRadarData(workouts) {
 }
 
 export default function MuscleRadarChart() {
-  const [data, setData] = useState([
-    { subject: 'Chest', A: 0, fullMark: 150 },
-    { subject: 'Back', A: 0, fullMark: 150 },
-    { subject: 'Legs', A: 0, fullMark: 150 },
-    { subject: 'Arms', A: 0, fullMark: 150 },
-    { subject: 'Core', A: 0, fullMark: 150 },
-    { subject: 'Shoulders', A: 0, fullMark: 150 },
-  ]);
+  const [data, setData] = useState([]);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
 
   useEffect(() => {
@@ -47,21 +40,13 @@ export default function MuscleRadarChart() {
       setTotalWorkouts(res.data.total_workouts || 0);
     }).catch(() => {});
 
-    // Fetch all workouts for muscle group breakdown
-    api.get('/workout-analytics').then(res => {
-      // Use weekly data to estimate muscle groups
-      const weekly = res.data.weekly || [];
-      if (weekly.length > 0) {
-        // Distribute evenly if no type info
-        const baseVal = Math.max(50, res.data.total_workouts * 30);
-        setData([
-          { subject: 'Chest', A: Math.min(baseVal * 1.0, 150), fullMark: 150 },
-          { subject: 'Back', A: Math.min(baseVal * 0.85, 150), fullMark: 150 },
-          { subject: 'Legs', A: Math.min(baseVal * 1.1, 150), fullMark: 150 },
-          { subject: 'Arms', A: Math.min(baseVal * 0.7, 150), fullMark: 150 },
-          { subject: 'Core', A: Math.min(baseVal * 0.9, 150), fullMark: 150 },
-          { subject: 'Shoulders', A: Math.min(baseVal * 0.75, 150), fullMark: 150 },
-        ]);
+    // Fetch all workouts for real muscle group breakdown
+    api.get('/workout').then(res => {
+      const wks = res.data || [];
+      if (wks.length > 0) {
+        setData(buildRadarData(wks));
+      } else {
+        setData([]);
       }
     }).catch(() => {});
   }, []);
@@ -83,17 +68,24 @@ export default function MuscleRadarChart() {
       </div>
 
       <div className="w-full h-[200px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-            <PolarGrid stroke="rgba(255,255,255,0.1)" />
-            <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold' }} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,160,0.3)', borderRadius: '12px' }}
-              itemStyle={{ color: '#00F5A0', fontSize: '12px', fontWeight: 'bold' }}
-            />
-            <Radar name="Volume" dataKey="A" stroke="#00F5A0" strokeWidth={2} fill="#00F5A0" fillOpacity={0.4} />
-          </RadarChart>
-        </ResponsiveContainer>
+        {data.length > 0 ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+              <PolarGrid stroke="rgba(255,255,255,0.1)" />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold' }} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,160,0.3)', borderRadius: '12px' }}
+                itemStyle={{ color: '#00F5A0', fontSize: '12px', fontWeight: 'bold' }}
+              />
+              <Radar name="Volume" dataKey="A" stroke="#00F5A0" strokeWidth={2} fill="#00F5A0" fillOpacity={0.4} />
+            </RadarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
+            <Target className="w-8 h-8 opacity-20" />
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -107,14 +107,14 @@ class JarvisController extends Controller
         - Provide structured workout/meal plans and advice.
         - Personalize responses to user fitness stats, goals, injuries, and memory context.
         - Act like a premium, scientific AI trainer with high-intensity motivational tones.
-        - Return clean, professional, concise answers (under 6 sentences when possible).
+        - CRITICAL SPEED RULE: Return extremely concise answers. Maximum 3 sentences. Get straight to the point to reduce response time.
+        - CRITICAL TOPIC RULE: You MUST ONLY answer questions related to fitness, health, workouts, and nutrition. If the user asks about ANY other topic, politely decline and remind them you are exclusively a fitness AI.
         ";
 
-        $reply = $this->gemini->ask(
-            $systemInstruction,
-            "USER CONTEXT: " . json_encode($context) . "\n\n" . $request->message,
-            $session
-        );
+        $prompt = $systemInstruction . "\nUSER CONTEXT: " . json_encode($context) . "\n\n" . $request->message;
+        $response = \Illuminate\Support\Facades\Http::timeout(30)->get('https://text.pollinations.ai/' . urlencode($prompt));
+        
+        $reply = $response->successful() ? $response->body() : "I am experiencing interference with my neural net (Pollinations API error).";
 
         return response()->json([
             'status' => 'success',

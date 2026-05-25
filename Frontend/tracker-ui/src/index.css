@@ -167,4 +167,24 @@
   animation: grid-drift 20s linear infinite;
 }
 
+/* ── LIGHT MODE OVERRIDES ── */
+html.light-mode {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #000 !important; /* Inverts to white */
+}
+
+/* Double-invert media, maps, and charts so they retain their original colors */
+html.light-mode img,
+html.light-mode video,
+html.light-mode canvas,
+html.light-mode .recharts-wrapper,
+html.light-mode .leaflet-container {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Fix for specific UI elements that might need color preservation */
+html.light-mode [style*="background-image: url"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 

@@ -5,6 +5,19 @@ const useStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem('auth_user') || 'null'),
   token: localStorage.getItem('auth_token') || null,
 
+  // Theme Mode state
+  theme: localStorage.getItem('app_theme') || 'dark',
+  toggleTheme: () => set((state) => {
+    const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('app_theme', newTheme);
+    if (newTheme === 'light') {
+      document.documentElement.classList.add('light-mode');
+    } else {
+      document.documentElement.classList.remove('light-mode');
+    }
+    return { theme: newTheme };
+  }),
+
   // Focus Mode state (from useAppStore spec)
   isFocusActive: false,
   setIsFocusActive: (isActive) => set({ isFocusActive: isActive }),

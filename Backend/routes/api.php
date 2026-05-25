@@ -88,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user/streak', [UserController::class, 'streak']);
     Route::get('/user/dna', [UserController::class, 'dna']);
+    Route::put('/user/profile', [UserController::class, 'updateProfile']);
     Route::get('/prs', [WorkoutController::class, 'prs']);
 
     // Progress & AI & Export

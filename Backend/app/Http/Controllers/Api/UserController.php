@@ -61,4 +61,30 @@ class UserController extends Controller
             ]
         ]);
     }
+
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'address' => 'sometimes|string|max:255|nullable',
+            'water_goal' => 'sometimes|numeric|min:0.5|max:10',
+        ]);
+
+        $user = $request->user();
+        if ($request->has('name')) {
+            $user->name = $request->name;
+        }
+        if ($request->has('address')) {
+            $user->address = $request->address;
+        }
+        if ($request->has('water_goal')) {
+            $user->water_goal = (float) $request->water_goal;
+        }
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
+    }
 }

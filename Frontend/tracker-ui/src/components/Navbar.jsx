@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, Share2, Plus, Calendar as CalendarIcon, Menu, Flame, Droplet, Moon, Zap } from 'lucide-react';
+import { Search, Bell, Share2, Plus, Calendar as CalendarIcon, Menu, Flame, Droplet, Moon, Sun, Zap } from 'lucide-react';
 import api from '../api/axios';
+import useStore from '../store/useStore';
 
 const PAGE_TITLES = {
   '/': 'Dashboard',
@@ -16,6 +17,7 @@ const PAGE_TITLES = {
 };
 
 export default function Navbar({ onMenuClick }) {
+  const { theme, toggleTheme } = useStore();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const title = PAGE_TITLES[pathname] ?? 'FitTrack AI';
@@ -42,6 +44,10 @@ export default function Navbar({ onMenuClick }) {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 20000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (theme === 'light') document.documentElement.classList.add('light-mode');
   }, []);
 
   useEffect(() => {
@@ -195,6 +201,14 @@ export default function Navbar({ onMenuClick }) {
             className="p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all"
           >
             <Share2 className="w-5 h-5" />
+          </button>
+          
+          <button 
+            onClick={toggleTheme}
+            className="p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all ml-2 shadow-inner"
+            title="Toggle Light/Dark Mode"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-indigo-400" />}
           </button>
         </div>
 

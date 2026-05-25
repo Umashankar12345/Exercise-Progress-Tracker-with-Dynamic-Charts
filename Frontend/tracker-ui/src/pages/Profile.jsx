@@ -1,12 +1,29 @@
-import React from 'react';
-import { User, Edit2, Shield, Settings, Trophy, Target, ChevronRight, Activity, MapPin, Mail, Plus, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Edit2, Shield, Settings, Trophy, Target, ChevronRight, Activity, MapPin, Mail, Plus, TrendingUp, Droplets } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import useStore from '../store/useStore';
 import api from '../api/axios';
 
 export default function Profile() {
-  const { user } = useStore();
+  const { user, token, setAuth } = useStore();
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'U';
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ 
+    name: user?.name || '', 
+    address: user?.address || 'NEW YORK, USA',
+    water_goal: user?.water_goal || 3.5,
+  });
+
+  const handleSave = async () => {
+    try {
+      const res = await api.put('/user/profile', editData);
+      setAuth(res.data.user, token);
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
+  };
 
   const { data: goals = [] } = useQuery({
     queryKey: ['goals'],
@@ -44,66 +61,76 @@ export default function Profile() {
 
           <div className="flex-1 text-center md:text-left space-y-4">
             <div>
-              <h1 className="text-4xl font-black text-on-surface tracking-tighter">{user?.name}</h1>
+              {isEditing ? (
+                <input 
+                  type="text" 
+                  value={editData.name} 
+                  onChange={(e) => setEditData({...editData, name: e.target.value})}
+                  className="text-4xl font-black text-on-surface tracking-tighter bg-transparent border-b border-primary focus:outline-none w-full md:w-auto"
+                />
+              ) : (
+                <h1 className="text-4xl font-black text-on-surface tracking-tighter">{user?.name}</h1>
+              )}
               <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
-                  <Shield className="w-3.5 h-3.5 text-primary" />
-                  PREMIUM MEMBER
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
                   <MapPin className="w-3.5 h-3.5 text-secondary" />
-                  NEW YORK, USA
+                  {isEditing ? (
+                    <input 
+                      type="text"
+                      value={editData.address}
+                      onChange={(e) => setEditData({...editData, address: e.target.value})}
+                      className="bg-transparent border-b border-secondary focus:outline-none text-on-surface-variant w-32"
+                      placeholder="Address"
+                    />
+                  ) : (
+                    <span>{user?.address || 'NEW YORK, USA'}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
                   <Mail className="w-3.5 h-3.5 text-tertiary" />
                   {user?.email}
                 </div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
+                  <Droplets className="w-3.5 h-3.5 text-blue-400" />
+                  {isEditing ? (
+                    <span className="flex items-center gap-1">
+                      <input 
+                        type="number"
+                        value={editData.water_goal}
+                        onChange={(e) => setEditData({...editData, water_goal: parseFloat(e.target.value)})}
+                        className="bg-transparent border-b border-blue-400 focus:outline-none text-on-surface-variant w-12 text-center"
+                        step="0.1" min="0.5" max="10"
+                      />
+                      <span className="text-blue-400">L / day goal</span>
+                    </span>
+                  ) : (
+                    <span className="text-blue-300">{user?.water_goal || 3.5}L daily water goal</span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex gap-4 justify-center md:justify-start">
-              <button className="px-6 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all">EDIT PROFILE</button>
-              <button className="px-6 py-2.5 bg-surface-bright border border-outline-variant text-xs font-black rounded-xl hover:border-primary/50 transition-all">ACCOUNT SETTINGS</button>
+              {isEditing ? (
+                <button 
+                  onClick={handleSave}
+                  className="px-6 py-2.5 bg-secondary text-white text-xs font-black rounded-xl shadow-lg shadow-secondary/20 hover:-translate-y-0.5 transition-all"
+                >
+                  SAVE CHANGES
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all"
+                >
+                  EDIT PROFILE
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Fitness DNA Classification Card */}
-      <div className="glass-card p-8 relative overflow-hidden group bg-gradient-to-r from-secondary/15 via-[#0F172A] to-[#070B14] border-l-4 border-l-secondary">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-secondary/5 rounded-full -translate-y-1/3 translate-x-1/3 blur-3xl" />
-        
-        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-          <div className="flex flex-col items-center justify-center shrink-0 w-28 h-28 rounded-2xl bg-secondary/10 border border-secondary/20 relative group-hover:scale-105 transition-all duration-300">
-            <span className="text-4xl animate-pulse">🧬</span>
-            <span className="text-[10px] font-black uppercase text-secondary tracking-widest mt-2">FITNESS DNA</span>
-          </div>
 
-          <div className="flex-1 space-y-3 text-center md:text-left">
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                Archetype: <span className="text-secondary">{dna?.class || 'Loading...'}</span>
-              </h2>
-              <div className="px-3 py-1 rounded-full bg-secondary/20 border border-secondary/40 text-[9px] font-black text-secondary tracking-widest uppercase w-fit mx-auto md:mx-0">
-                AI Classified
-              </div>
-            </div>
-            <p className="text-v2-soft-gray text-sm leading-relaxed max-w-2xl">
-              {dna?.description || 'Evaluating your workout history, frequency, volume, sleep, and hydration parameters...'}
-            </p>
-
-            {dna && (
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/5">
-                {Object.entries(dna.stats || {}).map(([label, val]) => (
-                  <div key={label} className="flex flex-col">
-                    <span className="text-[9px] font-bold text-v2-soft-gray uppercase tracking-widest">{label}</span>
-                    <span className="text-base font-black text-white mt-0.5">{val}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         

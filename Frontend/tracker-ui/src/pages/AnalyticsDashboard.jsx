@@ -44,17 +44,7 @@ export default function AnalyticsDashboard() {
   // Find max value in chart data for coloring / scaling
   const maxWorkoutCount = Math.max(...chartData.map(d => d.value), 1);
 
-  const weightChartData = analytics?.weight_chart && analytics.weight_chart.length > 0
-    ? analytics.weight_chart
-    : [
-        { date: '05/18', weight: 81.2 },
-        { date: '05/19', weight: 80.9 },
-        { date: '05/20', weight: 81.0 },
-        { date: '05/21', weight: 80.5 },
-        { date: '05/22', weight: 80.4 },
-        { date: '05/23', weight: 79.8 },
-        { date: '05/24', weight: 79.5 },
-      ];
+  const weightChartData = analytics?.weight_chart || [];
 
   if (loading) {
     return (
@@ -190,25 +180,32 @@ export default function AnalyticsDashboard() {
             </div>
 
             <div className="w-full h-[320px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00F5FF" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#00F5FF" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="day" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                  <YAxis allowDecimals={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,255,0.3)', borderRadius: '12px', color: '#white' }}
-                    itemStyle={{ color: '#00F5FF', fontSize: 12, fontWeight: 'bold' }}
-                    labelStyle={{ color: '#94A3B8', fontSize: 10, textTransform: 'uppercase', fontWeight: 'bold' }}
-                  />
-                  <Area type="monotone" dataKey="value" stroke="#00F5FF" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" dot={{ r: 4, fill: '#070B14', strokeWidth: 2, stroke: '#00F5FF' }} activeDot={{ r: 6, fill: '#00F5FF' }} />
-                </AreaChart>
-              </ResponsiveContainer>
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#00F5FF" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#00F5FF" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="day" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,255,0.3)', borderRadius: '12px', color: '#white' }}
+                      itemStyle={{ color: '#00F5FF', fontSize: 12, fontWeight: 'bold' }}
+                      labelStyle={{ color: '#94A3B8', fontSize: 10, textTransform: 'uppercase', fontWeight: 'bold' }}
+                    />
+                    <Area type="monotone" dataKey="value" stroke="#00F5FF" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" dot={{ r: 4, fill: '#070B14', strokeWidth: 2, stroke: '#00F5FF' }} activeDot={{ r: 6, fill: '#00F5FF' }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
+                  <Activity className="w-8 h-8 opacity-20" />
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -224,26 +221,33 @@ export default function AnalyticsDashboard() {
             </div>
 
             <div className="w-full h-[320px]">
-              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <LineChart data={weightChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                  <YAxis domain={['dataMin - 2', 'dataMax + 2']} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,255,0.3)', borderRadius: '12px', color: '#white' }}
-                    itemStyle={{ color: '#00E5FF', fontSize: 12, fontWeight: 'bold' }}
-                    labelStyle={{ color: '#94A3B8', fontSize: 10, textTransform: 'uppercase', fontWeight: 'bold' }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#00E5FF"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: '#070B14', strokeWidth: 2, stroke: '#00E5FF' }}
-                    activeDot={{ r: 6, fill: '#00E5FF' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {weightChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                  <LineChart data={weightChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={['dataMin - 2', 'dataMax + 2']} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,255,0.3)', borderRadius: '12px', color: '#white' }}
+                      itemStyle={{ color: '#00E5FF', fontSize: 12, fontWeight: 'bold' }}
+                      labelStyle={{ color: '#94A3B8', fontSize: 10, textTransform: 'uppercase', fontWeight: 'bold' }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="#00E5FF"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: '#070B14', strokeWidth: 2, stroke: '#00E5FF' }}
+                      activeDot={{ r: 6, fill: '#00E5FF' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
+                  <Scale className="w-8 h-8 opacity-20" />
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -37,17 +37,13 @@ const NAV_GROUPS = [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/enterprise', label: 'Analytics', icon: LineChart },
       { to: '/ai-workout', label: 'AI Workout', icon: Activity },
-      { to: '/health-intelligence', label: 'Health', icon: HeartPulse },
       { to: '/calendar', label: 'Calendar', icon: Calendar },
     ]
   },
   {
-    title: 'AI Features',
+    title: 'Jarvis AI',
     items: [
-      { to: '/ai-chat', label: 'Jarvis AI', icon: Bot },
-      { to: '/insights', label: 'AI Insights', icon: Brain },
-      { to: '/futuristic', label: 'Vision AI', icon: Eye },
-      { to: '/intelligence', label: 'Recovery AI', icon: Zap },
+      { to: '/jarvis', label: 'Jarvis AI Coach', icon: Bot },
     ]
   },
   {
@@ -55,8 +51,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/log', label: 'Log Workout', icon: ClipboardList },
       { to: '/library', label: 'Exercise Library', icon: Dumbbell },
-      { to: '/charts', label: 'Progress Charts', icon: BarChart3 },
-      { to: '/health', label: 'Heatmap', icon: Flame },
+      { to: '/health', label: 'Health Dashboard', icon: HeartPulse },
     ]
   },
   {
@@ -73,13 +68,6 @@ const NAV_GROUPS = [
       { to: '/report', label: 'Monthly Report', icon: FileText },
       { to: '/report?action=export', label: 'Export PDF', icon: Download },
     ]
-  },
-  {
-    title: 'Settings',
-    items: [
-      { to: '/profile', label: 'Profile', icon: User },
-      { to: '/settings', label: 'Settings', icon: Settings },
-    ]
   }
 ];
 
@@ -89,6 +77,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
   const location = useLocation();
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'U';
   const [unreadCount, setUnreadCount] = React.useState(0);
+  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
 
   const fetchUnreadCount = async () => {
     try {
@@ -124,7 +113,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
     };
   }, [user]);
 
-  const handleLogout = async () => {
+  const confirmLogout = async () => {
     try { await api.post('/auth/logout'); } catch (_) {}
     logout();
     navigate('/login');
@@ -248,24 +237,16 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
       {/* Footer Area */}
       <div className="mt-auto flex flex-col gap-4 pt-4 border-t border-white/5">
         
-        {/* AI Orb */}
-        <div className={`flex flex-col items-center justify-center transition-all duration-300 ${isCollapsed ? 'my-2' : 'p-4 rounded-2xl bg-cyan-950/10 border border-cyan-500/10 my-2 shadow-[inset_0_0_20px_rgba(6,182,212,0.05)]'}`}>
-          <div className="relative flex items-center justify-center w-12 h-12">
-            <div className="absolute inset-0 rounded-full bg-cyan-500/10 animate-ping" />
-            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-75 blur-sm" style={{ animation: 'spin 8s linear infinite' }} />
-            <div className="relative w-8 h-8 rounded-full bg-[#060B16] border border-cyan-400 flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.5)]">
-              <Bot className="w-4 h-4 text-cyan-400 animate-pulse" />
-            </div>
-          </div>
-          {!isCollapsed && (
-            <div className="mt-2 text-center">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-cyan-400 animate-pulse">AI Engine Online</span>
-            </div>
-          )}
-        </div>
 
-        {/* User Profile Card */}
-        <div className={`p-2 rounded-xl bg-white/[0.02] border border-white/5 backdrop-blur-sm group/profile hover:bg-white/[0.04] transition-all duration-300 cursor-pointer relative ${isCollapsed ? 'flex justify-center' : 'flex items-center justify-between'}`}>
+
+        {/* User Profile Card (Click to go to Profile) */}
+        <div 
+          onClick={() => {
+            navigate('/profile');
+            if (onClose) onClose();
+          }}
+          className={`p-2 rounded-xl bg-white/[0.02] border border-white/5 backdrop-blur-sm group/profile hover:bg-white/[0.04] transition-all duration-300 cursor-pointer relative ${isCollapsed ? 'flex justify-center' : 'flex items-center justify-between'}`}
+        >
           <div className="flex items-center gap-3">
             <div className="relative flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 text-white font-bold text-sm ring-2 ring-cyan-500/30">
               {initials}
@@ -279,25 +260,70 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
             )}
           </div>
           {!isCollapsed && (
-            <button 
-              onClick={handleLogout}
-              className="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="text-slate-400 group-hover/profile:text-white p-1.5 transition-colors">
+              <Settings className="w-4 h-4" />
+            </div>
           )}
 
-          {/* Tooltip for Collapsed Profile Logout */}
+          {/* Tooltip for Collapsed Profile */}
           {isCollapsed && (
             <div 
-              onClick={handleLogout}
-              className="absolute left-full ml-3 p-3 rounded-xl bg-[#0F172A] border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/profile:opacity-100 transition-opacity z-[100] shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:bg-red-500/10"
+              className="absolute left-full ml-3 p-3 rounded-xl bg-[#0F172A] border border-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/profile:opacity-100 transition-opacity pointer-events-none z-[100] shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
             >
-              Log Out
+              View Profile
             </div>
           )}
         </div>
+
+        {/* Separate Logout Button */}
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className={`group flex items-center rounded-2xl transition-all duration-300 relative text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 ${isCollapsed ? 'justify-center p-2' : 'px-2 py-2 gap-3'}`}
+        >
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 bg-white/5 group-hover:bg-red-500/20 group-hover:text-red-400`}>
+            <LogOut className="w-5 h-5" />
+          </div>
+          {!isCollapsed && (
+            <span className="text-sm font-semibold tracking-wide truncate">Log Out</span>
+          )}
+          {isCollapsed && (
+            <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#0F172A] border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+              Log Out
+            </div>
+          )}
+        </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300">
+          <div className="bg-[#060B16] border border-cyan-500/20 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(34,211,238,0.15)] flex flex-col items-center text-center gap-6">
+            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]">
+              <LogOut className="w-10 h-10" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-white tracking-wide">Ready to Leave?</h3>
+              <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                You are about to log out of your FitTrack AI session.
+              </p>
+            </div>
+            <div className="flex gap-4 w-full mt-2">
+              <button 
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-3.5 px-4 rounded-xl font-black text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all uppercase tracking-widest text-[10px]"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmLogout}
+                className="flex-1 py-3.5 px-4 rounded-xl font-black text-white bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all uppercase tracking-widest text-[10px]"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

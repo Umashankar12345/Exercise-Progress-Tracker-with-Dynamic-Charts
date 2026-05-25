@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import JarvisFloating from './JarvisFloating';
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -40,6 +41,8 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      {/* Jarvis Floating AI Button - visible on all pages */}
+      <JarvisFloating />
     </div>
   );
 }

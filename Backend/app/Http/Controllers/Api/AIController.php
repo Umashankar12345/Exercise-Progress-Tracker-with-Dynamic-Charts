@@ -8,6 +8,7 @@ use App\Services\AI\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Http;
 
 class AIController extends Controller
 {
@@ -60,7 +61,11 @@ class AIController extends Controller
         $message = $request->input('message');
         
         try {
-            $reply = $this->gemini->ask("You are 'Jarvis for Fitness', a high-end AI coach.", $message);
+            // Use Pollinations AI instead of Gemini
+            $prompt = "You are 'Jarvis for Fitness', a high-end AI coach. CRITICAL: Reply in 2 sentences MAXIMUM for extreme speed. You MUST ONLY answer questions related to fitness, health, nutrition, or workouts. If the user asks about ANY other topic, decline and state you are exclusively a fitness coach. User says: " . $message;
+            $response = Http::timeout(15)->get('https://text.pollinations.ai/' . urlencode($prompt));
+            
+            $reply = $response->successful() ? $response->body() : "I am experiencing interference with my neural net (Pollinations API error).";
             
             return response()->json([
                 'candidates' => [

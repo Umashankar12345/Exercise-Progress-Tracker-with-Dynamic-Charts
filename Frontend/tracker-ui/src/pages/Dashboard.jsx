@@ -7,7 +7,6 @@ import HydrationRing from '../components/dashboard/HydrationRing';
 import WeightPredictionChart from '../components/dashboard/WeightPredictionChart';
 import SleepRecoveryChart from '../components/dashboard/SleepRecoveryChart';
 import MuscleRadarChart from '../components/dashboard/MuscleRadarChart';
-import SmartwatchSync from '../components/futuristic/SmartwatchSync';
 import api from '../api/axios';
 import useStore from '../store/useStore';
 import { getEcho } from '../lib/echo';
@@ -595,43 +594,7 @@ export default function Dashboard() {
          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00E5FF]/10 blur-[150px] rounded-full mix-blend-screen" />
       </div>
 
-      {/* Realtime Futuristic Debug Panel */}
-      <div className="fixed bottom-6 left-6 z-50 max-w-xs md:max-w-sm rounded-2xl bg-[#090F1D]/90 border border-[#00E5FF]/30 p-4 backdrop-blur-xl shadow-[0_0_20px_rgba(0,229,255,0.2)] transition-all duration-300">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-[10px] font-black text-[#00E5FF] uppercase tracking-widest flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse" />
-            Telemetry Debug Console
-          </h4>
-          <span className="text-[9px] text-gray-500 font-mono">v1.2.0</span>
-        </div>
-        
-        <div className="space-y-1.5 font-mono text-[10px] text-gray-300">
-          <div className="flex justify-between bg-black/20 p-1.5 rounded">
-            <span className="text-gray-500">Motion Sensor:</span>
-            <span id="debug-motion-status" className="text-amber-400 font-bold">Waiting for start...</span>
-          </div>
-          <div className="flex justify-between bg-black/20 p-1.5 rounded">
-            <span className="text-gray-500">Acceleration:</span>
-            <span id="debug-mag" className="text-white">Mag: 0.00 | Dyn: 0.00</span>
-          </div>
-          <div className="flex justify-between bg-black/20 p-1.5 rounded">
-            <span className="text-gray-500">GPS Tracker:</span>
-            <span id="debug-gps" className="text-white">Lat: 0.000000 | Lng: 0.000000</span>
-          </div>
-          <div className="bg-black/20 p-1.5 rounded space-y-1 text-gray-400">
-            <div className="text-[9px] text-[#7C3AED] font-black uppercase tracking-wider">Android HTTPS Tunnel Tip:</div>
-            <div className="text-[8px] leading-normal text-gray-400 font-sans">
-              Modern Android Chrome ignores HTTP insecure flags for sensors.
-              <br />
-              Tunnel through secure HTTPS from your laptop:
-              <br />
-              <code className="text-[#00E5FF] select-all bg-black/40 px-1 rounded">npx localtunnel --port 5173</code>
-              <br />
-              or use <code className="text-[#00E5FF]">ngrok http 5173</code>. Open the secure link on your phone!
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       <div className="relative z-10 space-y-8 max-w-[1600px] mx-auto">
          {/* TOP: Hero Section */}
@@ -674,39 +637,45 @@ export default function Dashboard() {
             <div className="flex flex-col gap-6 xl:col-span-1 md:col-span-2">
                <MuscleRadarChart />
                
-               {/* Smartwatch Sync Simulator */}
-               <SmartwatchSync 
-                  activeHeartRate={activeSession?.heartRate} 
-                  activeSteps={activeSession?.steps} 
-                  activeCalories={activeSession?.calories} 
-                  isTracking={activeSession?.status === 'active'} 
-               />
-               
-               {/* Mini AI Insight Card */}
-               <div className="w-full rounded-3xl bg-gradient-to-br from-[#7C3AED]/20 to-[#0F172A] border border-[#7C3AED]/30 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+               {/* Jarvis AI Coach Launch Card */}
+               <div className="w-full rounded-3xl bg-gradient-to-br from-[#7C3AED]/20 via-[#0F172A] to-[#4F46E5]/10 border border-[#7C3AED]/20 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between shadow-[0_8px_30px_rgba(124,58,237,0.2)]">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-[#7C3AED] opacity-10 blur-[60px] rounded-full pointer-events-none group-hover:opacity-20 transition-opacity duration-500" />
+                  
                   <div>
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-[#7C3AED] opacity-20 blur-[40px] rounded-full pointer-events-none" />
-                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4">Daily AI Insights</h3>
-                     <div className="space-y-3">
-                        {insights.length > 0 ? (
-                           insights.slice(0, 3).map((ins, i) => (
-                              <div key={i} className="flex gap-2 items-start">
-                                 <span className="text-cyan-400 shrink-0 font-bold">🧬</span>
-                                 <p className="text-v2-soft-gray text-xs leading-relaxed font-bold">{ins}</p>
-                              </div>
-                           ))
-                        ) : (
-                           <p className="text-v2-soft-gray text-xs leading-relaxed">
-                              Syncing training telemetry and health metrics to compile predictive biological intelligence models...
-                           </p>
-                        )}
-                     </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-2xl bg-[#7C3AED] flex items-center justify-center shadow-[0_0_20px_rgba(124,58,237,0.4)]">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2" /></svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-white uppercase tracking-widest">Jarvis AI Coach</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00F5A0] animate-pulse" />
+                          <p className="text-[9px] text-[#00F5A0] font-bold uppercase tracking-widest">AI Engine Active</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2.5">
+                      {insights.length > 0 ? (
+                        insights.slice(0, 2).map((ins, i) => (
+                          <div key={i} className="flex gap-2 items-start p-2.5 rounded-xl bg-white/[0.03] border border-white/8">
+                            <span className="text-[#7C3AED] shrink-0 text-xs mt-0.5">✦</span>
+                            <p className="text-[#94A3B8] text-xs leading-relaxed">{ins}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                          <p className="text-[#475569] text-xs">Log workouts to receive AI insights</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-6 flex items-center gap-2">
-                     <div className="px-2 py-1 rounded bg-[#7C3AED]/20 border border-[#7C3AED]/40 text-[#00E5FF] text-[9px] uppercase font-black tracking-widest">Active Engine</div>
-                     <div className="px-2 py-1 rounded bg-white/5 border border-white/10 text-white text-[9px] uppercase font-black tracking-widest">Telemetry Sync</div>
-                  </div>
+
+                  <a href="/jarvis" className="mt-5 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 border border-[#7C3AED]/30 hover:border-[#7C3AED]/50 text-[#7C3AED] text-[10px] font-black uppercase tracking-widest transition-all duration-200 group/btn">
+                    <svg className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                    Open Jarvis AI Coach
+                  </a>
                </div>
+
             </div>
 
          </div>

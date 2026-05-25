@@ -21,7 +21,9 @@ class User extends Authenticatable
         'experience_level',
         'weight',
         'height',
+        'water_goal',
         'injuries',
+        'address',
     ];
 
     protected $hidden = [
@@ -37,6 +39,7 @@ class User extends Authenticatable
             'injuries' => 'array',
             'weight' => 'float',
             'height' => 'float',
+            'water_goal' => 'float',
         ];
     }
 

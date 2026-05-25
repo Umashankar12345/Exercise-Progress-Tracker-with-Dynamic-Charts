@@ -10,12 +10,12 @@ use App\Models\AiSession;
 
 class GeminiService
 {
-    protected string $apiKey;
+    protected string $apiKey = '';
     protected string $model = 'gemini-2.5-flash';
 
     public function __construct()
     {
-        $this->apiKey = env('GEMINI_API_KEY', config('services.gemini.key', ''));
+        $this->apiKey = (string) env('GEMINI_API_KEY', config('services.gemini.key', ''));
     }
 
     protected function getVerifyOption()

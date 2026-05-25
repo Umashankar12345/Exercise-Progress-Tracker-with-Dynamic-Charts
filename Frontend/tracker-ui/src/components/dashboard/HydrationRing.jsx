@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Droplet } from 'lucide-react';
 import api from '../../api/axios';
+import useStore from '../../store/useStore';
 
 export default function HydrationRing() {
+  const { user } = useStore();
+  const waterGoal = user?.water_goal || 3.5;
   const [percentage, setPercentage] = useState(0);
   const [waterIntake, setWaterIntake] = useState(0);
 
@@ -10,10 +13,9 @@ export default function HydrationRing() {
     const fetchHealth = async () => {
       try {
         const res = await api.get('/health-dashboard');
-        const currentWater = parseFloat(res.data.water_intake) || 0;
+        const currentWater = res.data.latest ? parseFloat(res.data.latest.water_intake) : 0;
         setWaterIntake(currentWater);
-        // Assuming target is 3.5L
-        const calcPercent = Math.min(Math.round((currentWater / 3.5) * 100), 100);
+        const calcPercent = Math.min(Math.round((currentWater / waterGoal) * 100), 100);
         setPercentage(calcPercent);
       } catch (err) {
         console.error("Failed to fetch health data", err);
@@ -65,7 +67,7 @@ export default function HydrationRing() {
         <div className="absolute flex flex-col items-center justify-center text-center">
           <Droplet className="w-5 h-5 text-[#0EA5E9] mb-1 drop-shadow-[0_0_5px_rgba(14,165,233,0.5)]" />
           <span className="text-2xl font-black text-white tracking-tighter">{percentage}%</span>
-          <span className="text-[10px] text-v2-soft-gray uppercase tracking-widest font-bold">{waterIntake.toFixed(1)}L / 3.5L</span>
+          <span className="text-[10px] text-v2-soft-gray uppercase tracking-widest font-bold">{waterIntake.toFixed(1)}L / {waterGoal.toFixed(1)}L</span>
         </div>
       </div>
     </div>

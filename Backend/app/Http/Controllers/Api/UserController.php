@@ -9,9 +9,15 @@ class UserController extends Controller
 {
     public function streak(Request $request)
     {
-        // Mock calculation of consecutive workout days
+        $user = $request->user();
+        $userId = $user ? $user->id : 1;
+
+        $streak = \App\Models\Workout::where('user_id', $userId)
+            ->selectRaw('COUNT(DISTINCT DATE(created_at)) as streak')
+            ->first()->streak ?? 0;
+
         return response()->json([
-            'streak' => 3
+            'streak' => (int) $streak
         ]);
     }
 
@@ -68,6 +74,7 @@ class UserController extends Controller
             'name' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255|nullable',
             'water_goal' => 'sometimes|numeric|min:0.5|max:10',
+            'steps_goal' => 'sometimes|integer|min:1000|max:100000',
         ]);
 
         $user = $request->user();
@@ -79,6 +86,9 @@ class UserController extends Controller
         }
         if ($request->has('water_goal')) {
             $user->water_goal = (float) $request->water_goal;
+        }
+        if ($request->has('steps_goal')) {
+            $user->steps_goal = (int) $request->steps_goal;
         }
         $user->save();
 

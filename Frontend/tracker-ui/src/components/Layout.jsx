@@ -1,13 +1,24 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import JarvisFloating from './JarvisFloating';
+import CyberBootLoader from './ui/CyberBootLoader';
+import PageTransitionLoader from './ui/PageTransitionLoader';
 import useStore from '../store/useStore';
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const location = useLocation();
+
+  // Cyber Boot Diagnostic state (plays only once per browser session)
+  const [isBooting, setIsBooting] = useState(() => {
+    return !sessionStorage.getItem('fittrack_booted');
+  });
+
+  // Glowing Screen Transition state (triggers on screen navigations)
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Global Data Pre-fetch (SWR Architecture)
   const { 
@@ -30,8 +41,36 @@ export default function Layout() {
     fetchExerciseLibrary(true);
   }, []);
 
+  // Monitor location path transitions
+  useEffect(() => {
+    // Do not show transition loader during the major initial boot sequence
+    if (isBooting) return;
+
+    setIsTransitioning(true);
+    const timer = setTimeout(() => {
+      setIsTransitioning(false);
+    }, 600); // Fluid 600ms micro-loading transition
+
+    return () => clearTimeout(timer);
+  }, [location.pathname, isBooting]);
+
+  // If system is doing the first time OS boot sequence
+  if (isBooting) {
+    return (
+      <CyberBootLoader 
+        onComplete={() => {
+          sessionStorage.setItem('fittrack_booted', 'true');
+          setIsBooting(false);
+        }} 
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-background selection:bg-primary/30 selection:text-primary relative overflow-x-hidden">
+      {/* High-fidelity glowing page change transition overlay */}
+      <PageTransitionLoader visible={isTransitioning} />
+
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 

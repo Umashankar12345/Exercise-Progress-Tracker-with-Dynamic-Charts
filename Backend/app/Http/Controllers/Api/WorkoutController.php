@@ -149,23 +149,42 @@ class WorkoutController extends Controller
         $user = auth('sanctum')->user() ?: $request->user();
         $userId = $user ? $user->id : 1;
 
-        // SQLite-compatible: strftime('%w') returns 0=Sunday, 1=Monday ... 6=Saturday
         $dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-        $weeklyRaw = Workout::where('user_id', $userId)
+        // Get workout calories grouped by day of week
+        $workoutCalories = Workout::where('user_id', $userId)
             ->selectRaw("strftime('%w', created_at) as day_num, SUM(calories_burned) as calories")
             ->groupBy('day_num')
             ->get()
-            ->map(fn($row) => [
-                'day'      => $dayNames[(int)$row->day_num] ?? 'Unknown',
-                'calories' => (int)$row->calories,
-            ]);
+            ->keyBy('day_num');
+
+        // Get daily step calories grouped by day of week
+        $stepCalories = \App\Models\DailyStep::where('user_id', $userId)
+            ->selectRaw("strftime('%w', date) as day_num, SUM(calories_burned) as calories")
+            ->groupBy('day_num')
+            ->get()
+            ->keyBy('day_num');
+
+        $weeklyCombined = [];
+        for ($i = 0; $i < 7; $i++) {
+            $wCal = isset($workoutCalories[(string)$i]) ? (int)$workoutCalories[(string)$i]->calories : 0;
+            $sCal = isset($stepCalories[(string)$i]) ? (int)$stepCalories[(string)$i]->calories : 0;
+            if ($wCal > 0 || $sCal > 0) {
+                $weeklyCombined[] = [
+                    'day' => $dayNames[$i],
+                    'calories' => $wCal + $sCal
+                ];
+            }
+        }
+
+        $totalWorkoutCalories = (int) Workout::where('user_id', $userId)->sum('calories_burned');
+        $totalStepCalories = (int) \App\Models\DailyStep::where('user_id', $userId)->sum('calories_burned');
 
         return response()->json([
             'total_workouts' => Workout::where('user_id', $userId)->count(),
-            'total_calories' => (int) Workout::where('user_id', $userId)->sum('calories_burned'),
+            'total_calories' => $totalWorkoutCalories + $totalStepCalories,
             'avg_duration'   => round(Workout::where('user_id', $userId)->avg('duration') ?? 0),
-            'weekly'         => $weeklyRaw,
+            'weekly'         => $weeklyCombined,
         ]);
     }
     

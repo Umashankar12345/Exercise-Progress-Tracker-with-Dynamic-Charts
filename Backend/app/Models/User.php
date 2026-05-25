@@ -22,6 +22,7 @@ class User extends Authenticatable
         'weight',
         'height',
         'water_goal',
+        'steps_goal',
         'injuries',
         'address',
     ];
@@ -40,6 +41,7 @@ class User extends Authenticatable
             'weight' => 'float',
             'height' => 'float',
             'water_goal' => 'float',
+            'steps_goal' => 'integer',
         ];
     }
 

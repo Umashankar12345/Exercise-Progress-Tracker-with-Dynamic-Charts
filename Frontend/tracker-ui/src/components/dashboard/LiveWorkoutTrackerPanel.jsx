@@ -85,8 +85,8 @@ export default function LiveWorkoutTrackerPanel({
             {getActivityIcon()}
           </div>
           <div>
-            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5">
-              Live Tracker Cockpit
+            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5 pt-1 leading-normal">
+              Real-Time Workout Session Metrics
             </h3>
             <span className="text-[10px] text-white/40 uppercase tracking-widest block mt-0.5">
               Engine: {currentExercise}

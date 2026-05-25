@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, Share2, Plus, Calendar as CalendarIcon, Menu, Flame, Droplet, Moon, Sun, Zap, LogOut } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import api from '../api/axios';
 import useStore from '../store/useStore';
 
@@ -17,7 +18,7 @@ const PAGE_TITLES = {
 };
 
 export default function Navbar({ onMenuClick }) {
-  const { theme, toggleTheme, logout } = useStore();
+  const { theme, toggleTheme, logout, exerciseLibrary } = useStore();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const title = PAGE_TITLES[pathname] ?? 'FitTrack AI';
@@ -28,13 +29,20 @@ export default function Navbar({ onMenuClick }) {
   });
 
   const [notifications, setNotifications] = useState([]);
+  const [streak, setStreak] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Spotlight Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchRef = useRef(null);
+
   const confirmLogout = async () => {
     try { await api.post('/auth/logout'); } catch {}
     logout();
+    toast.success('Logged out successfully. See you soon!');
     navigate('/login');
   };
 
@@ -47,9 +55,22 @@ export default function Navbar({ onMenuClick }) {
     }
   };
 
+  const fetchStreak = async () => {
+    try {
+      const res = await api.get('/user/streak');
+      setStreak(res.data?.streak ?? 0);
+    } catch (err) {
+      console.error('Error fetching user streak:', err);
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 20000);
+    fetchStreak();
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchStreak();
+    }, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -59,8 +80,13 @@ export default function Navbar({ onMenuClick }) {
 
   useEffect(() => {
     function handleClickOutside(e) {
+      // Notification dropdown click outside
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
+      }
+      // Spotlight search click outside
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setIsSearchFocused(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -68,6 +94,28 @@ export default function Navbar({ onMenuClick }) {
   }, []);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const navItems = [
+    { name: 'Dashboard Analytics', path: '/' },
+    { name: 'Log Workout Session', path: '/log' },
+    { name: 'Exercise Reference Library', path: '/library' },
+    { name: 'Jarvis AI Coaching Center', path: '/jarvis' },
+    { name: 'AI Periodization Workout Plan', path: '/plan' },
+    { name: 'Monthly Performance Report', path: '/report' },
+    { name: 'Health & Body Metrics Logs', path: '/health' },
+    { name: 'Profile & Goal Tuning', path: '/profile' },
+  ];
+
+  const filteredNav = searchQuery 
+    ? navItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : navItems.slice(0, 4);
+
+  const filteredExercises = searchQuery && Array.isArray(exerciseLibrary)
+    ? exerciseLibrary.filter(ex => 
+        ex.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        ex.muscle_group?.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
 
   const handleMarkAsRead = async (id) => {
     try {
@@ -122,34 +170,105 @@ export default function Navbar({ onMenuClick }) {
     <header className="h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant px-4 md:px-8 flex items-center sticky top-0 z-40">
       <button 
         onClick={onMenuClick}
-        className="mr-4 p-2 md:hidden text-on-surface-variant hover:text-on-surface transition-colors"
+        className="mr-4 p-2 md:hidden text-white/80 hover:text-white transition-colors"
       >
         <Menu className="w-6 h-6" />
       </button>
 
-      <div className="flex flex-col flex-1 min-w-0">
-        <h1 className="text-lg md:text-xl font-bold text-on-surface tracking-tight truncate">{title}</h1>
-        <div className="flex items-center gap-2 text-[11px] text-on-surface-variant font-medium">
-          <CalendarIcon className="w-3 h-3" />
-          {today}
+      <div className="flex flex-col flex-1 min-w-0 select-none">
+        <h1 className="text-lg md:text-xl font-bold text-white tracking-tight truncate">{title}</h1>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-300 font-medium mt-0.5">
+          <span className="flex items-center gap-1">
+            <CalendarIcon className="w-3.5 h-3.5 text-secondary" />
+            {today}
+          </span>
+          <span className="w-1 h-1 rounded-full bg-outline-variant hidden sm:inline" />
+          <span className="flex items-center gap-1.5 text-orange-400 font-black tracking-wider uppercase bg-orange-500/10 border border-orange-500/20 px-2.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.1)]">
+            <Flame className="w-3.5 h-3.5 fill-orange-500 animate-pulse filter drop-shadow-[0_0_4px_rgba(249,115,22,0.6)]" />
+            STREAK: {streak} {streak === 1 ? 'DAY' : 'DAYS'}
+          </span>
         </div>
       </div>
 
       <div className="flex items-center gap-1.5 md:gap-4">
-        <div className="relative group hidden md:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant group-focus-within:text-primary transition-colors" />
+        <div className="relative group hidden md:block" ref={searchRef}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70 group-focus-within:text-primary transition-colors" />
           <input 
             type="text" 
-            placeholder="Search analytics..." 
-            className="bg-surface-container border border-outline-variant rounded-full py-2 pl-10 pr-4 text-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 w-64 transition-all"
+            placeholder="Search pages, exercises..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            className="bg-surface-container border border-outline-variant rounded-full py-2 pl-10 pr-4 text-sm text-white placeholder-white/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 w-64 focus:w-80 transition-all duration-300 font-medium"
           />
+          
+          {/* Spotlight Search Dropdown */}
+          {isSearchFocused && (
+            <div className="absolute right-0 mt-3 w-96 bg-[#0F172A] border border-white/10 rounded-2xl shadow-2xl p-4 z-50 space-y-4 animate-in slide-in-from-top-2 duration-200 backdrop-blur-xl">
+              {/* Category: System Pages */}
+              {filteredNav.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[9px] font-black uppercase text-primary tracking-widest block">📁 System Nodes</span>
+                  <div className="space-y-1">
+                    {filteredNav.map((item, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          navigate(item.path);
+                          setIsSearchFocused(false);
+                          setSearchQuery('');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white transition-all flex items-center justify-between group/nav"
+                      >
+                        <span>{item.name}</span>
+                        <span className="text-[9px] font-bold text-slate-500 group-hover/nav:text-primary transition-colors">GO ➔</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Category: Exercise Library */}
+              {filteredExercises.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[9px] font-black uppercase text-secondary tracking-widest block">🏋️ Reference Exercises</span>
+                  <div className="space-y-1">
+                    {filteredExercises.map((ex) => (
+                      <button
+                        key={ex.id}
+                        onClick={() => {
+                          navigate(`/library/${ex.id}`);
+                          setIsSearchFocused(false);
+                          setSearchQuery('');
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white transition-all flex items-center justify-between group/ex"
+                      >
+                        <div className="flex flex-col">
+                          <span>{ex.name}</span>
+                          <span className="text-[8px] text-slate-500 uppercase tracking-wider">{ex.muscle_group}</span>
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-500 group-hover/ex:text-secondary transition-colors">VIEW ➔</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {filteredNav.length === 0 && filteredExercises.length === 0 && (
+                <div className="text-center py-6">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No nodes match your query</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 border-l border-outline-variant pl-2 sm:pl-4">
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="p-2 md:p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all relative group"
+              className="p-2 md:p-2.5 rounded-full bg-surface-container border border-outline-variant text-white/80 hover:text-white hover:bg-surface-bright transition-all relative group"
             >
               <Bell className="w-4.5 h-4.5 md:w-5 md:h-5" />
               {unreadCount > 0 && (
@@ -204,16 +323,11 @@ export default function Navbar({ onMenuClick }) {
             )}
           </div>
           
-          <button 
-            onClick={handleShare}
-            className="hidden sm:block p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
+
           
           <button 
             onClick={toggleTheme}
-            className="p-2 md:p-2.5 rounded-full bg-surface-container border border-outline-variant text-on-surface-variant hover:text-on-surface hover:bg-surface-bright transition-all ml-1 sm:ml-2 shadow-inner"
+            className="p-2 md:p-2.5 rounded-full bg-surface-container border border-outline-variant text-white/80 hover:text-white hover:bg-surface-bright transition-all ml-1 sm:ml-2 shadow-inner"
             title="Toggle Light/Dark Mode"
           >
             {theme === 'dark' ? <Sun className="w-4.5 h-4.5 md:w-5 md:h-5 text-yellow-400" /> : <Moon className="w-4.5 h-4.5 md:w-5 md:h-5 text-indigo-400" />}

@@ -55,7 +55,19 @@ export default function Login() {
 
       const { data } = await api.post(`/auth/${mode}`, payload);
       const token = data.access_token || data.token;
+      
+      // Force trigger of premium "Boot diagnostics sequence" for the new session
+      sessionStorage.removeItem('fittrack_booted');
+      
       setAuth(data.user, token);
+      
+      // Dynamic success notifications
+      if (mode === 'login') {
+        toast.success(`Welcome back, ${data.user.name}! Systems nominal.`);
+      } else {
+        toast.success('Registration successful! Welcome to the FitTrack matrix.');
+      }
+      
       navigate('/');
     } catch (err) {
       if (!err.response) {

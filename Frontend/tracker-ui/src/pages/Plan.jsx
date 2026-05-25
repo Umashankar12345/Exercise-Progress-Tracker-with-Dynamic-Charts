@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Bot, Zap, Clock, ChevronRight, Target, Dumbbell, Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import api from '../api/axios';
 
 const getVolumeBadgeStyle = (vol) => {
@@ -34,8 +35,10 @@ export default function Plan() {
       setRegenerating(true);
       const { data } = await api.post('/workout-plan/generate');
       setPlan(data);
+      toast.success('Gemini adaptive training plan generated!');
     } catch (err) {
       console.error('Error regenerating plan:', err);
+      toast.error('Failed to formulate plan. Please try again.');
     } finally {
       setRegenerating(false);
     }
@@ -69,8 +72,10 @@ export default function Plan() {
     if (!plan || !plan.days) return;
     try {
       await api.put('/workout-plan/reorder', { days: plan.days });
+      toast.success('Curriculum sequence updated successfully!');
     } catch (err) {
       console.error('Failed to save reordered plan:', err);
+      toast.error('Failed to save reordered schedule sequence.');
     }
   };
 

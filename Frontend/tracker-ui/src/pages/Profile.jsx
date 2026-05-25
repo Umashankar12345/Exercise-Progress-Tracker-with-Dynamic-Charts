@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Edit2, Shield, Settings, Trophy, Target, ChevronRight, Activity, MapPin, Mail, Plus, TrendingUp, Droplets } from 'lucide-react';
+import { User, Edit2, Shield, Settings, Trophy, Target, ChevronRight, Activity, MapPin, Mail, Plus, TrendingUp, Droplets, Footprints } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 import useStore from '../store/useStore';
 import api from '../api/axios';
 
@@ -13,6 +14,7 @@ export default function Profile() {
     name: user?.name || '', 
     address: user?.address || 'NEW YORK, USA',
     water_goal: user?.water_goal || 3.5,
+    steps_goal: user?.steps_goal || 10000,
   });
 
   const handleSave = async () => {
@@ -20,8 +22,10 @@ export default function Profile() {
       const res = await api.put('/user/profile', editData);
       setAuth(res.data.user, token);
       setIsEditing(false);
+      toast.success('Bio metrics and profile updated successfully!');
     } catch (err) {
       console.error('Failed to update profile:', err);
+      toast.error('Unable to save changes. Please try again.');
     }
   };
 
@@ -97,7 +101,7 @@ export default function Profile() {
                       <input 
                         type="number"
                         value={editData.water_goal}
-                        onChange={(e) => setEditData({...editData, water_goal: parseFloat(e.target.value)})}
+                        onChange={(e) => setEditData({...editData, water_goal: parseFloat(e.target.value) || 0})}
                         className="bg-transparent border-b border-blue-400 focus:outline-none text-on-surface-variant w-12 text-center"
                         step="0.1" min="0.5" max="10"
                       />
@@ -105,6 +109,23 @@ export default function Profile() {
                     </span>
                   ) : (
                     <span className="text-blue-300">{user?.water_goal || 3.5}L daily water goal</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-xs font-bold text-on-surface-variant">
+                  <Footprints className="w-3.5 h-3.5 text-green-400" />
+                  {isEditing ? (
+                    <span className="flex items-center gap-1">
+                      <input 
+                        type="number"
+                        value={editData.steps_goal}
+                        onChange={(e) => setEditData({...editData, steps_goal: parseInt(e.target.value) || 0})}
+                        className="bg-transparent border-b border-green-400 focus:outline-none text-on-surface-variant w-16 text-center"
+                        step="500" min="1000" max="100000"
+                      />
+                      <span className="text-green-400">steps / day goal</span>
+                    </span>
+                  ) : (
+                    <span className="text-green-300">{(user?.steps_goal || 10000).toLocaleString()} steps daily goal</span>
                   )}
                 </div>
               </div>

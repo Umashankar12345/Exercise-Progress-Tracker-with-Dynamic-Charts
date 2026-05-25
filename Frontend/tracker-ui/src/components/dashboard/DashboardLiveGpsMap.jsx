@@ -162,8 +162,8 @@ export default function DashboardLiveGpsMap({ activeSession }) {
             <Map className="w-5 h-5 text-cyan-400" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-white uppercase tracking-widest">
-              Live Heatmap GPS Route
+            <h3 className="text-sm font-black text-white uppercase tracking-widest pt-1 leading-normal">
+              Outdoor Run/Cycle GPS Tracking
             </h3>
             <span className="text-[10px] text-white/40 uppercase tracking-widest">
               Intensity Trail Tracking

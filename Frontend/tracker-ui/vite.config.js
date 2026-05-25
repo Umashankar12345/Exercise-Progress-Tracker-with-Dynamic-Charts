@@ -16,6 +16,19 @@ export default defineConfig({
   },
   server: {
     host: true,
-    allowedHosts: true
+    allowedHosts: true,
+    // Proxy /api calls to local Laravel backend — no second tunnel needed!
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/sanctum': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    }
   }
 })

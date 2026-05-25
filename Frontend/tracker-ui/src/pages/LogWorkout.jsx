@@ -16,6 +16,7 @@ import {
   Eye,
   HelpCircle
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import api from '../api/axios';
 import useStore from '../store/useStore';
 import PlateCalculatorModal from '../components/PlateCalculatorModal';
@@ -184,6 +185,7 @@ export default function LogWorkout() {
     if (!exercise) { 
       setStatus('error'); 
       setMsg('Please select an exercise before logging.'); 
+      toast.error('Please select an exercise first!');
       return; 
     }
     setLoading(true);
@@ -207,9 +209,11 @@ export default function LogWorkout() {
       if (response.data.isOfflineCached) {
         setStatus('success');
         setMsg(`Workout saved offline! It will automatically sync when internet connection restores.`);
+        toast.success('Workout queued offline! Syncing in background.');
       } else {
         setStatus('success');
         setMsg(`Workout saved successfully! AI Insights are being generated.`);
+        toast.success('Workout saved! Generating intelligent coaching feedback...');
       }
 
       setSets(defaultSets); 
@@ -222,29 +226,15 @@ export default function LogWorkout() {
     } catch (err) {
       setStatus('error');
       setMsg(err.response?.data?.message || 'Failed to save workout. Please try again.');
+      toast.error('Failed to log workout session. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (isFocusActive) {
-    return (
-      <FocusModeHUD
-        exerciseName={exercise}
-        sets={sets}
-        onUpdateSet={updateSet}
-        onAddSet={addSet}
-        onDeleteSet={delSet}
-        onSubmit={handleSubmit}
-        onClose={() => setIsFocusActive(false)}
-      />
-    );
-  }
-
   return (
     <div className="flex flex-col gap-8">
       {/* Real-time Tracking Header */}
-      <ActiveSessionTracking />
 
       {msg && (
         <div className={`p-4 rounded-xl border flex items-center gap-3 animate-in slide-in-from-top duration-300 ${
@@ -255,10 +245,8 @@ export default function LogWorkout() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Main Logging Form */}
-        <div className="xl:col-span-2 space-y-6">
-          <div className="glass-card">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start w-full">
+          <div className="glass-card xl:col-span-2">
             <div className="p-6 border-b border-outline-variant flex items-center justify-between bg-gradient-to-r from-primary/5 to-transparent">
               <div className="flex items-center gap-3">
                 <Dumbbell className="w-6 h-6 text-primary" />
@@ -269,16 +257,18 @@ export default function LogWorkout() {
               </div>
               <div className="flex items-center gap-3">
                 <button
+                  disabled={!exercise}
+                  title={!exercise ? "Please choose an exercise first" : "Start Focus Mode"}
                   onClick={() => setIsFocusActive(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 border border-primary/30 rounded-xl text-[10px] font-black text-primary uppercase tracking-widest transition-all"
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                    !exercise 
+                      ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed border border-zinc-700' 
+                      : 'bg-primary hover:bg-primary/90 text-white shadow-[0_0_15px_rgba(124,58,237,0.5)]'
+                  }`}
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                  Focus HUD
+                  <Eye className="w-4 h-4" />
+                  Start Focus Mode
                 </button>
-                <div className="flex items-center gap-2 px-3 py-1 bg-surface-bright rounded-full border border-outline-variant">
-                  <div className="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse" />
-                  <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">LIVE DB</span>
-                </div>
               </div>
             </div>
 
@@ -689,8 +679,8 @@ export default function LogWorkout() {
           </div>
 
           {/* Recent Workouts History */}
-          <div className="glass-card mt-6">
-            <div className="p-6 border-b border-outline-variant flex items-center justify-between bg-[#0F172A]">
+          <div className="glass-card xl:col-span-1 flex flex-col max-h-[800px]">
+            <div className="p-6 border-b border-outline-variant flex items-center justify-between bg-gradient-to-r from-[#00E5FF]/5 to-transparent">
               <div className="flex items-center gap-3">
                 <History className="w-6 h-6 text-[#00E5FF]" />
                 <div>
@@ -700,10 +690,24 @@ export default function LogWorkout() {
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Controls: Search and Filter */}
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:w-72">
+            <div className="p-6 space-y-6 overflow-y-auto flex-1">
+              {/* Controls: Filter then Search */}
+              <div className="flex flex-col gap-4">
+                <div className="flex gap-2 bg-surface-bright p-1 rounded-xl border border-outline-variant w-full sm:w-fit">
+                  {['All', 'Strength', 'Cardio'].map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setHistoryFilter(f)}
+                      className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                        historyFilter === f ? 'bg-primary text-white shadow-md' : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative w-full">
                   <input
                     type="text"
                     placeholder="Search by exercise name..."
@@ -712,124 +716,53 @@ export default function LogWorkout() {
                     className="w-full bg-surface-container border border-outline-variant rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-primary text-white"
                   />
                 </div>
-                <div className="flex gap-2 bg-surface-bright p-1 rounded-xl border border-outline-variant">
-                  {['All', 'Strength', 'Cardio'].map(f => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => setHistoryFilter(f)}
-                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                        historyFilter === f ? 'bg-primary text-white shadow-md' : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              {/* Table */}
-              <div className="w-full overflow-x-auto">
-                <table className="w-full border-collapse text-left text-xs text-white">
-                  <thead>
-                    <tr className="border-b border-outline-variant text-[10px] font-black uppercase tracking-widest text-v2-soft-gray">
-                      <th className="py-3 px-4">Exercise</th>
-                      <th className="py-3 px-4">Type</th>
-                      <th className="py-3 px-4 text-center">Duration</th>
-                      <th className="py-3 px-4 text-center">Calories</th>
-                      <th className="py-3 px-4">Logged At</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historyList
-                      .filter(w => (w.name || '').toLowerCase().includes((historySearch || '').toLowerCase()))
-                      .filter(w => historyFilter === 'All' || (historyFilter === 'Strength' && (w.type || '').toLowerCase().includes('strength')) || (historyFilter === 'Cardio' && (w.type || '').toLowerCase().includes('cardio')))
-                      .map(w => (
-                        <tr key={w.id} className="border-b border-outline-variant/30 hover:bg-white/5 transition-colors">
-                          <td className="py-3.5 px-4 font-bold text-white">
-                            <div>{w.name}</div>
-                            {w.notes && <div className="text-[10px] text-v2-soft-gray font-normal mt-0.5">{w.notes}</div>}
-                          </td>
-                          <td className="py-3.5 px-4 font-medium text-v2-soft-gray">{w.type}</td>
-                          <td className="py-3.5 px-4 text-center font-semibold text-white">{w.duration} mins</td>
-                          <td className="py-3.5 px-4 text-center font-semibold text-secondary">{w.calories_burned} kcal</td>
-                          <td className="py-3.5 px-4 text-on-surface-variant">{new Date(w.started_at || w.created_at).toLocaleDateString()}</td>
-                          <td className="py-3.5 px-4 text-right">
-                            <div className="flex items-center justify-end gap-3">
-                              <button type="button" onClick={() => handleEditWorkout(w)} className="text-[#00E5FF] hover:underline font-bold">Edit</button>
-                              <button type="button" onClick={() => handleDeleteWorkout(w.id)} className="text-red-400 hover:underline font-bold">Delete</button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    {historyList.length === 0 && (
-                      <tr>
-                        <td colSpan="6" className="py-8 text-center italic text-on-surface-variant">No recent workouts found.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Widgets */}
-        <div className="space-y-8">
-          <AIInsightsCard />
-
-          {/* Cardio Pace Analytics Chart */}
-          <CardioPaceChart sets={sets} />
-
-          {/* Goal Progress Widget */}
-          <div className="glass-card overflow-hidden">
-            <div className="p-4 border-b border-outline-variant flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-tertiary" />
-                <h4 className="text-xs font-black text-on-surface uppercase tracking-widest">Active Goals</h4>
-              </div>
-              <History className="w-4 h-4 text-on-surface-variant" />
-            </div>
-            <div className="p-4 space-y-6">
-              {(!Array.isArray(goals) || goals.length === 0) ? (
-                <p className="text-xs text-on-surface-variant text-center py-4 italic">No active goals found.</p>
-              ) : (
-                goals.map(g => (
-                  <div key={g.id} className="space-y-3">
-                    <div className="flex justify-between items-end">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider">Weight Goal</span>
-                        <span className="text-sm font-bold text-on-surface">{g.target_weight} kg</span>
+              {/* Stacked List */}
+              <div className="flex flex-col gap-3">
+                {historyList
+                  .filter(w => (w.name || '').toLowerCase().includes((historySearch || '').toLowerCase()))
+                  .filter(w => historyFilter === 'All' || (historyFilter === 'Strength' && (w.type || '').toLowerCase().includes('strength')) || (historyFilter === 'Cardio' && (w.type || '').toLowerCase().includes('cardio')))
+                  .map(w => (
+                    <div key={w.id} className="p-4 rounded-2xl bg-white/5 border border-outline-variant/30 hover:bg-white/10 transition-colors flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-white text-sm">{w.name}</h4>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-v2-soft-gray bg-surface-bright px-2 py-0.5 rounded-md mt-1 inline-block">{w.type}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-bold text-secondary">{w.calories_burned} kcal</span>
+                          <div className="text-[10px] text-on-surface-variant font-medium mt-0.5">{new Date(w.started_at || w.created_at).toLocaleDateString()}</div>
+                        </div>
                       </div>
-                      <span className="text-lg font-black text-secondary">{g.percentage}%</span>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs font-semibold text-white">
+                          <span className="text-v2-soft-gray font-normal mr-1">Duration:</span> {w.duration} mins
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button type="button" onClick={() => handleEditWorkout(w)} className="text-[10px] uppercase tracking-widest text-[#00E5FF] hover:underline font-black">Edit</button>
+                          <button type="button" onClick={() => handleDeleteWorkout(w.id)} className="text-[10px] uppercase tracking-widest text-red-400 hover:underline font-black">Delete</button>
+                        </div>
+                      </div>
+                      
+                      {w.notes && (
+                        <div className="text-[10px] text-v2-soft-gray font-normal border-t border-outline-variant/30 pt-2 mt-1">
+                          {w.notes}
+                        </div>
+                      )}
                     </div>
-                    <div className="h-2 w-full bg-surface-bright rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-secondary rounded-full transition-all duration-1000" 
-                        style={{ width: `${g.percentage}%` }}
-                      />
-                    </div>
+                  ))}
+                  
+                {historyList.length === 0 && (
+                  <div className="py-8 text-center italic text-on-surface-variant text-xs">
+                    No recent workouts found.
                   </div>
-                ))
-              )}
+                )}
+              </div>
             </div>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-secondary/10 to-transparent border border-secondary/20 space-y-4">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-secondary" />
-              <span className="text-[10px] font-black text-secondary uppercase tracking-widest">System Architecture</span>
-            </div>
-            <p className="text-[11px] text-on-surface-variant font-bold leading-relaxed">
-              Submitting this workout triggers the <span className="text-on-surface">WorkoutObserver</span>. 
-              The backend dispatches an async <span className="text-on-surface">AnalyzeWorkoutJob</span> 
-              which uses <span className="text-on-surface">Gemini AI</span> to update your insights via 
-              <span className="text-secondary"> Laravel Reverb</span> WebSockets.
-            </p>
           </div>
         </div>
-      </div>
 
       {/* Render Plate Calculator Modal if active */}
       {activeCalculatorWeight !== null && (
@@ -920,6 +853,23 @@ export default function LogWorkout() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Focus Mode HUD Overlay */}
+      {isFocusActive && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+          <div className="pointer-events-auto w-full h-full">
+            <FocusModeHUD
+              exerciseName={exercise}
+              sets={sets}
+              onUpdateSet={updateSet}
+              onAddSet={addSet}
+              onDeleteSet={delSet}
+              onSubmit={handleSubmit}
+              onClose={() => setIsFocusActive(false)}
+            />
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Scale, Heart, TrendingDown, TrendingUp, Info, Plus, Calendar, Zap, Bot, ArrowRight, Activity, Moon, ShieldAlert } from 'lucide-react';
 import api from '../api/axios';
+import { toast } from 'react-hot-toast';
 import { BMIGauge } from '../components/BMIGauge';
 import { WeightTrendChart } from '../components/WeightTrendChart';
 import WeightPredictionChart from '../components/dashboard/WeightPredictionChart';
@@ -54,18 +55,20 @@ export default function Health() {
         e.preventDefault();
         try {
             await api.post('/body-metrics', { weight, height, age, gender, date });
+            toast.success('Body metrics logged successfully!');
             fetchData();
         } catch (err) {
-            alert('Error logging metrics. Please check inputs.');
+            toast.error('Failed to log metrics. Please check inputs.');
         }
     };
 
     const handleQuickWeightLog = async (weightVal) => {
         try {
             await api.post('/weight-logs', { weight: weightVal });
+            toast.success('Current weight logged successfully!');
             await fetchData();
         } catch (err) {
-            alert('Error logging weight. Please try again.');
+            toast.error('Error logging weight. Please try again.');
             throw err;
         }
     };
@@ -121,132 +124,112 @@ export default function Health() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Health & BMI Dashboard</h1>
-                    <p className="text-gray-400 font-medium">Track your body metrics, prediction forecasts, and AI-optimized nutrition plans.</p>
-                </div>
-                <div className="flex items-center gap-3 px-4 py-2 bg-[#00E5FF]/10 border border-[#00E5FF]/20 rounded-xl">
-                    <Heart className="w-5 h-5 text-[#00E5FF] animate-pulse" />
-                    <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">Health Sync Active</span>
+                    <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Health Dashboard</h1>
+                    <p className="text-gray-400 font-medium">Track metrics and AI-optimized nutrition plans.</p>
                 </div>
             </div>
 
+            {/* ROW 1: BMI & Daily Metrics */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* BMI Gauge & Quick Log */}
-                <div className="xl:col-span-1 flex flex-col gap-8">
+                {/* BMI Gauge */}
+                <div className="xl:col-span-1 flex flex-col">
                     <BMIGauge bmi={parseFloat(currentBmi) || latest?.bmi} />
-                    
-                    {/* Log Daily Metrics */}
-                    <div className="glass-card bg-[#0F172A]/80 border border-white/10 p-6 flex flex-col gap-6 rounded-3xl">
+                </div>
+
+                {/* Daily Metrics Logging */}
+                <div className="xl:col-span-2 flex flex-col">
+                    <div className="glass-card bg-[#0F172A]/80 border border-white/10 p-6 flex flex-col gap-6 rounded-3xl h-full justify-center">
                         <h3 className="font-black text-sm uppercase tracking-widest text-white">Log Daily Metrics</h3>
                         
-                        {/* Live Calculation preview HUD */}
-                        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 grid grid-cols-3 gap-2 text-center text-xs font-bold">
-                            <div>
-                                <span className="text-gray-500 block uppercase text-[8px]">Live BMI</span>
-                                <span className="text-sm font-black text-cyan-400">{currentBmi}</span>
-                            </div>
-                            <div className="border-l border-white/5">
-                                <span className="text-gray-500 block uppercase text-[8px]">Live TDEE</span>
-                                <span className="text-sm font-black text-yellow-400">{tdeeEstimate} kcal</span>
-                            </div>
-                            <div className="border-l border-white/5">
-                                <span className="text-gray-500 block uppercase text-[8px]">Live Fat%</span>
-                                <span className="text-sm font-black text-purple-400">
-                                    {typeof bodyFatEstimate === 'number' ? bodyFatEstimate.toFixed(1) : bodyFatEstimate}%
-                                </span>
-                            </div>
-                        </div>
-
                         <form onSubmit={handleLog} className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Weight (kg)</label>
                                     <div className="flex items-center gap-2">
-                                        <button type="button" onClick={() => setWeight(p => (parseFloat(p||75) - 0.5).toFixed(1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
+                                        <button type="button" onClick={() => setWeight(p => (parseFloat(p || latest?.weight || 75) - 0.5).toFixed(1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
                                         <input 
                                             type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} required
                                             className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-2 py-3 text-center text-sm font-black text-[#00E5FF] focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
-                                            placeholder="75.0"
                                         />
-                                        <button type="button" onClick={() => setWeight(p => (parseFloat(p||75) + 0.5).toFixed(1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
+                                        <button type="button" onClick={() => setWeight(p => (parseFloat(p || latest?.weight || 75) + 0.5).toFixed(1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Height (cm)</label>
                                     <div className="flex items-center gap-2">
-                                        <button type="button" onClick={() => setHeight(p => String(parseInt(p||180) - 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
+                                        <button type="button" onClick={() => setHeight(p => String(parseInt(p || latest?.height || 180) - 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
                                         <input 
                                             type="number" step="1" value={height} onChange={e => setHeight(e.target.value)} required
                                             className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-2 py-3 text-center text-sm font-black text-[#00E5FF] focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
-                                            placeholder="180"
                                         />
-                                        <button type="button" onClick={() => setHeight(p => String(parseInt(p||180) + 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
+                                        <button type="button" onClick={() => setHeight(p => String(parseInt(p || latest?.height || 180) + 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Age</label>
                                     <div className="flex items-center gap-2">
-                                        <button type="button" onClick={() => setAge(p => String(parseInt(p||25) - 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
+                                        <button type="button" onClick={() => setAge(p => String(parseInt(p || latest?.age || 25) - 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
                                         <input 
                                             type="number" value={age} onChange={e => setAge(e.target.value)} required
                                             className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-2 py-3 text-center text-sm font-black text-[#00E5FF] focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
-                                            placeholder="25"
                                         />
-                                        <button type="button" onClick={() => setAge(p => String(parseInt(p||25) + 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
+                                        <button type="button" onClick={() => setAge(p => String(parseInt(p || latest?.age || 25) + 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
                                     </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Gender</label>
-                                    <select 
-                                        value={gender} onChange={e => setGender(e.target.value)} required
-                                        className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white cursor-pointer"
-                                    >
-                                        <option value="Male" className="bg-[#0f172a]">Male</option>
-                                        <option value="Female" className="bg-[#0f172a]">Female</option>
-                                    </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Gender</label>
+                                        <select 
+                                            value={gender} onChange={e => setGender(e.target.value)} required
+                                            className="w-full h-11 bg-[#1e293b]/60 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white cursor-pointer"
+                                        >
+                                            <option value="Male" className="bg-[#0f172a]">Male</option>
+                                            <option value="Female" className="bg-[#0f172a]">Female</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Date</label>
+                                        <div className="relative">
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                            <input 
+                                                type="date" value={date} onChange={e => setDate(e.target.value)} required
+                                                className="w-full h-11 bg-[#1e293b]/60 border border-white/10 rounded-xl pl-9 pr-2 py-2 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Date</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input 
-                                        type="date" value={date} onChange={e => setDate(e.target.value)} required
-                                        className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl pl-11 pr-4 py-3 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white"
-                                    />
-                                </div>
-                            </div>
-                            <button className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                            
+                            <button className="w-full mt-2 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
                                 Update Metrics
                             </button>
                         </form>
                     </div>
                 </div>
+            </div>
 
-                {/* Main Content Area */}
-                <div className="xl:col-span-2 flex flex-col gap-8">
-                    {/* Weight Predictions & Trends */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <WeightTrendChart 
-                            data={weightLogs.length > 0 
-                                ? weightLogs.map(w => {
-                                    const d = new Date(w.created_at || w.date);
-                                    const month = String(d.getMonth() + 1).padStart(2, '0');
-                                    const day = String(d.getDate()).padStart(2, '0');
-                                    return { date: `${month}/${day}`, weight: parseFloat(w.weight) };
-                                  })
-                                : history.map(h => ({ date: h.date.slice(5), weight: parseFloat(h.weight) }))
-                            } 
-                            onLogWeight={handleQuickWeightLog}
-                        />
-                        <WeightPredictionChart forecastData={forecastPoints} />
-                    </div>
+            {/* ROW 2: Weight Predictions & Trends */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <WeightTrendChart 
+                    data={weightLogs.length > 0 
+                        ? weightLogs.map(w => {
+                            const d = new Date(w.created_at || w.date);
+                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            return { date: `${month}/${day}`, weight: parseFloat(w.weight) };
+                          })
+                        : history.map(h => ({ date: h.date.slice(5), weight: parseFloat(h.weight) }))
+                    } 
+                    onLogWeight={handleQuickWeightLog}
+                />
+                <WeightPredictionChart forecastData={forecastPoints} />
+            </div>
 
-                    {/* Weight Plans Section */}
+            {/* ROW 3: Nutrition Strategies */}
+            <div className="w-full flex flex-col gap-8">
                     <div className="glass-card bg-[#0F172A]/50 border border-white/10 rounded-3xl overflow-hidden">
                         <div className="p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 bg-gradient-to-r from-primary/5 to-transparent">
                             <div className="flex flex-col">
@@ -272,14 +255,6 @@ export default function Health() {
                         <div className="p-8">
                             {plan ? (
                                 <div className="space-y-8">
-                                    {/* Cardiovascular / WHO Risk Analysis Banner */}
-                                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 flex items-start gap-3">
-                                        <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5" />
-                                        <div>
-                                            <span className="text-[10px] font-black uppercase tracking-widest">WHO Clinical Risk Analysis</span>
-                                            <p className="text-xs font-bold text-white mt-1">{plan.health_risk}</p>
-                                        </div>
-                                    </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div className="space-y-6">
@@ -325,35 +300,45 @@ export default function Health() {
                                             <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Macro Nutrient Optimization</p>
                                                 
-                                                <div className="space-y-3">
-                                                    <div>
-                                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                                            <span className="text-gray-400">Protein</span>
-                                                            <span>{plan[view].protein}g</span>
+                                                {(() => {
+                                                    const planMacros = plan ? plan[view] : null;
+                                                    const totalMacroCalories = planMacros ? (planMacros.protein * 4) + (planMacros.carbs * 4) + (planMacros.fats * 9) : 1;
+                                                    const proteinPct = planMacros ? ((planMacros.protein * 4) / totalMacroCalories) * 100 : 0;
+                                                    const carbsPct = planMacros ? ((planMacros.carbs * 4) / totalMacroCalories) * 100 : 0;
+                                                    const fatsPct = planMacros ? ((planMacros.fats * 9) / totalMacroCalories) * 100 : 0;
+                                                    
+                                                    return (
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <div className="flex justify-between text-xs font-bold mb-1">
+                                                                    <span className="text-gray-400">Protein</span>
+                                                                    <span>{planMacros?.protein}g</span>
+                                                                </div>
+                                                                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                                                    <div className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)] transition-all duration-1000 ease-out" style={{ width: `${proteinPct}%` }} />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex justify-between text-xs font-bold mb-1">
+                                                                    <span className="text-gray-400">Carbohydrates</span>
+                                                                    <span>{planMacros?.carbs}g</span>
+                                                                </div>
+                                                                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                                                    <div className="h-full bg-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.5)] transition-all duration-1000 ease-out delay-150" style={{ width: `${carbsPct}%` }} />
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex justify-between text-xs font-bold mb-1">
+                                                                    <span className="text-gray-400">Fats</span>
+                                                                    <span>{planMacros?.fats}g</span>
+                                                                </div>
+                                                                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                                                    <div className="h-full bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)] transition-all duration-1000 ease-out delay-300" style={{ width: `${fatsPct}%` }} />
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
-                                                            <div className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)] transition-all duration-1000 ease-out" style={{ width: '80%' }} />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                                            <span className="text-gray-400">Carbohydrates</span>
-                                                            <span>{plan[view].carbs}g</span>
-                                                        </div>
-                                                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
-                                                            <div className="h-full bg-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.5)] transition-all duration-1000 ease-out delay-150" style={{ width: '65%' }} />
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex justify-between text-xs font-bold mb-1">
-                                                            <span className="text-gray-400">Fats</span>
-                                                            <span>{plan[view].fats}g</span>
-                                                        </div>
-                                                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
-                                                            <div className="h-full bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)] transition-all duration-1000 ease-out delay-300" style={{ width: '45%' }} />
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                    );
+                                                })()}
                                             </div>
 
                                             {/* AI Advice list */}
@@ -390,7 +375,6 @@ export default function Health() {
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     );
 }

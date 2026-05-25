@@ -138,15 +138,33 @@ class DashboardController extends Controller
         }
 
         // Weekly progress: past 7 days calories burned per day
-        $weeklyProgress = \App\Models\Workout::where('user_id', $userId)
+        $workoutProgress = \App\Models\Workout::where('user_id', $userId)
             ->where('created_at', '>=', now()->subDays(6)->startOfDay())
             ->selectRaw('DATE(created_at) as day, SUM(calories_burned) as calories')
             ->groupBy('day')
             ->get()
-            ->map(fn($row) => [
-                'day' => date('D', strtotime($row->day)),
-                'calories' => (int) $row->calories
-            ]);
+            ->keyBy('day');
+
+        $stepProgress = \App\Models\DailyStep::where('user_id', $userId)
+            ->where('date', '>=', now()->subDays(6)->startOfDay())
+            ->selectRaw('DATE(date) as day, SUM(calories_burned) as calories')
+            ->groupBy('day')
+            ->get()
+            ->keyBy('day');
+
+        $weeklyProgress = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $wCal = isset($workoutProgress[$date]) ? (int)$workoutProgress[$date]->calories : 0;
+            $sCal = isset($stepProgress[$date]) ? (int)$stepProgress[$date]->calories : 0;
+            
+            if ($wCal > 0 || $sCal > 0 || $i === 0) { // always include today
+                $weeklyProgress[] = [
+                    'day' => date('D', strtotime($date)),
+                    'calories' => $wCal + $sCal
+                ];
+            }
+        }
 
         $weightLogs = \App\Models\WeightLog::where('user_id', $userId)
             ->latest()
@@ -159,9 +177,16 @@ class DashboardController extends Controller
                 'weight' => (float) $log->weight
             ]);
 
+        $todaySteps = \App\Models\DailyStep::where('user_id', $userId)
+            ->where('date', now()->toDateString())
+            ->first();
+
+        $totalWorkoutCalories = (int) $workouts->sum('calories_burned');
+        $totalStepCalories = (int) \App\Models\DailyStep::where('user_id', $userId)->sum('calories_burned');
+
         return response()->json([
             'total_workouts' => $workouts->count(),
-            'total_calories' => (int) $workouts->sum('calories_burned'),
+            'total_calories' => $totalWorkoutCalories + $totalStepCalories,
             'weekly_volume'  => (float) $weeklyVolume,
             'hydration'      => (float) ($healthLatest?->water_intake ?? 0),
             'sleep'          => (float) ($healthLatest?->sleep_hours ?? 0),
@@ -175,6 +200,8 @@ class DashboardController extends Controller
             'weight_chart'   => $weightLogs,
             'water_goal'     => (float) ($user->water_goal ?? 3.5),
             'sleep_goal'     => 8.0,
+            'steps'          => $todaySteps ? (int) $todaySteps->step_count : 0,
+            'steps_goal'     => (int) ($user->steps_goal ?? 10000),
         ]);
     }
 }

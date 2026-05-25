@@ -10,6 +10,7 @@ return [
         'http://127.0.0.1:5173',
         'http://localhost:5174',
         'http://127.0.0.1:5174',
+        'https://gender-purchase-undertone.ngrok-free.dev',
         'https://exercise-progress-tracker-with-dyna.vercel.app',
         env('FRONTEND_URL'),
         isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : null,

@@ -4,9 +4,9 @@ import LiveWorkoutTrackerPanel from '../components/dashboard/LiveWorkoutTrackerP
 import DashboardLiveGpsMap from '../components/dashboard/DashboardLiveGpsMap';
 import CaloriesBurnedChart from '../components/dashboard/CaloriesBurnedChart';
 import HydrationRing from '../components/dashboard/HydrationRing';
-import WeightPredictionChart from '../components/dashboard/WeightPredictionChart';
 import SleepRecoveryChart from '../components/dashboard/SleepRecoveryChart';
-import MuscleRadarChart from '../components/dashboard/MuscleRadarChart';
+import WaterIntakeHistoryChart from '../components/dashboard/WaterIntakeHistoryChart';
+import StepsHistoryChart from '../components/dashboard/StepsHistoryChart';
 import api from '../api/axios';
 import useStore from '../store/useStore';
 import { getEcho } from '../lib/echo';
@@ -621,24 +621,25 @@ export default function Dashboard() {
          {/* BOTTOM: Analytics Matrix Grid */}
          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             
-            {/* Left Column */}
+            {/* Left Column - Today's Energy & Target Hydration */}
             <div className="flex flex-col gap-6">
                <CaloriesBurnedChart />
                <HydrationRing />
             </div>
 
-            {/* Middle Column */}
+            {/* Middle Column - 7-Day History Trends */}
             <div className="flex flex-col gap-6">
-               <WeightPredictionChart />
                <SleepRecoveryChart />
+               <WaterIntakeHistoryChart />
             </div>
 
-            {/* Right Column */}
+            {/* Right Column - Cognitive AI Guidance Core & Step Telemetry */}
             <div className="flex flex-col gap-6 xl:col-span-1 md:col-span-2">
-               <MuscleRadarChart />
                
+               <StepsHistoryChart />
+
                {/* Jarvis AI Coach Launch Card */}
-               <div className="w-full rounded-3xl bg-gradient-to-br from-[#7C3AED]/20 via-[#0F172A] to-[#4F46E5]/10 border border-[#7C3AED]/20 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between shadow-[0_8px_30px_rgba(124,58,237,0.2)]">
+               <div className="w-full h-full rounded-3xl bg-gradient-to-br from-[#7C3AED]/20 via-[#0F172A] to-[#4F46E5]/10 border border-[#7C3AED]/20 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between shadow-[0_8px_30px_rgba(124,58,237,0.2)] min-h-[330px]">
                   <div className="absolute top-0 right-0 w-40 h-40 bg-[#7C3AED] opacity-10 blur-[60px] rounded-full pointer-events-none group-hover:opacity-20 transition-opacity duration-500" />
                   
                   <div>
@@ -649,14 +650,14 @@ export default function Dashboard() {
                       <div>
                         <h3 className="text-sm font-black text-white uppercase tracking-widest">Jarvis AI Coach</h3>
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#00F5A0] animate-pulse" />
-                          <p className="text-[9px] text-[#00F5A0] font-bold uppercase tracking-widest">AI Engine Active</p>
+                           <span className="w-1.5 h-1.5 rounded-full bg-[#00F5A0] animate-pulse" />
+                           <p className="text-[9px] text-[#00F5A0] font-bold uppercase tracking-widest">AI Engine Active</p>
                         </div>
                       </div>
                     </div>
                     <div className="space-y-2.5">
                       {insights.length > 0 ? (
-                        insights.slice(0, 2).map((ins, i) => (
+                        insights.slice(0, 3).map((ins, i) => (
                           <div key={i} className="flex gap-2 items-start p-2.5 rounded-xl bg-white/[0.03] border border-white/8">
                             <span className="text-[#7C3AED] shrink-0 text-xs mt-0.5">✦</span>
                             <p className="text-[#94A3B8] text-xs leading-relaxed">{ins}</p>
@@ -664,13 +665,13 @@ export default function Dashboard() {
                         ))
                       ) : (
                         <div className="p-3 rounded-xl bg-white/[0.02] border border-white/5 text-center">
-                          <p className="text-[#475569] text-xs">Log workouts to receive AI insights</p>
+                          <p className="text-[#475569] text-xs font-bold uppercase tracking-wider">Nominal systems state. Log metrics for insights.</p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <a href="/jarvis" className="mt-5 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 border border-[#7C3AED]/30 hover:border-[#7C3AED]/50 text-[#7C3AED] text-[10px] font-black uppercase tracking-widest transition-all duration-200 group/btn">
+                  <a href="/jarvis" className="mt-5 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#7C3AED]/20 hover:bg-[#7C3AED]/30 border border-[#7C3AED]/30 hover:border-[#7C3AED]/50 text-[#7C3AED] text-[10px] font-black uppercase tracking-widest transition-all duration-200 group/btn">
                     <svg className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
                     Open Jarvis AI Coach
                   </a>

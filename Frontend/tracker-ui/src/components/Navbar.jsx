@@ -222,7 +222,7 @@ export default function Navbar({ onMenuClick }) {
 
         <button 
           onClick={() => navigate('/log')}
-          className="ml-2 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white dark:text-[#060B16] px-3 md:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
+          className="ml-2 flex items-center gap-2 bg-primary hover:bg-primary/90 text-white dark:text-white px-3 md:px-5 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
         >
           <Plus className="w-4 h-4 stroke-[3]" />
           <span className="hidden sm:inline">NEW SESSION</span>
@@ -231,7 +231,7 @@ export default function Navbar({ onMenuClick }) {
 
         <button 
           onClick={() => setShowLogoutConfirm(true)}
-          className="ml-2 flex items-center gap-2 bg-red-100 dark:bg-red-500/10 hover:bg-red-200 dark:hover:bg-red-500/20 text-red-700 dark:text-red-400 px-3 md:px-4 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black transition-all hover:-translate-y-0.5 active:translate-y-0 border border-red-200 dark:border-red-500/20 shadow-sm"
+          className="ml-2 flex items-center gap-2 bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-black transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-md shadow-red-500/30"
         >
           <LogOut className="w-4 h-4 stroke-[3]" />
           <span className="hidden md:inline">LOG OUT</span>

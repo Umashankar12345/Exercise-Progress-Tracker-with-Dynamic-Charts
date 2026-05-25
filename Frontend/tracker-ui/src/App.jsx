@@ -18,6 +18,7 @@ import Report from './pages/Report';
 import Settings from './pages/Settings';
 import Health from './pages/Health';
 import useStore from './store/useStore';
+import CookieConsent from './components/ui/CookieConsent';
 import './index.css';
 
 // Protected route wrapper
@@ -30,6 +31,7 @@ function App() {
   return (
     <Router>
       <Toaster position="top-right" reverseOrder={false} />
+      <CookieConsent />
       <Routes>
         {/* Public */}
         <Route path="/login" element={<Login />} />

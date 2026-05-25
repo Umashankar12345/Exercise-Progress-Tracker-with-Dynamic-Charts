@@ -145,6 +145,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/workouts/{workout}/export', [ExportController::class, 'exportWorkout']);
+    Route::get('/reports/monthly/summary', [MonthlyReportController::class, 'summary']);
     Route::match(['get', 'post'], '/reports/monthly', [MonthlyReportController::class, 'getReport']);
 
     // Additions: Offline Sync, Ghost Placeholder, Target Advising, Routines Reorder
@@ -182,10 +183,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/workouts/import', [SocialInteractionController::class, 'importWorkout']);
     Route::post('/challenges/{id}/join', [SocialInteractionController::class, 'joinChallenge']);
     Route::get('/challenges/active', [SocialInteractionController::class, 'getActiveChallenges']);
+    Route::get('/challenges', [SocialInteractionController::class, 'getChallenges']);
     Route::get('/leaderboard', [SocialInteractionController::class, 'getLeaderboard']);
     Route::post('/live-sessions/join', [SocialInteractionController::class, 'joinLiveSession']);
     Route::post('/live-sessions/leave', [SocialInteractionController::class, 'leaveLiveSession']);
     Route::get('/live-sessions/{roomId}/participants', [SocialInteractionController::class, 'getLiveSessionParticipants']);
 });
-
 

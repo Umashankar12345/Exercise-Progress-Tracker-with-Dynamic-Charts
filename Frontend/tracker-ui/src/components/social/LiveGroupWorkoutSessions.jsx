@@ -3,7 +3,7 @@ import { Video, Users, Loader2, Play, Square } from 'lucide-react';
 import useStore from '../../store/useStore';
 import { getEcho } from '../../lib/echo';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
+import api from '../../api/axios';
 
 export default function LiveGroupWorkoutSessions() {
   const { activeSessionRoom, joinSession, leaveSession, roomParticipants, updateRoomParticipants } = useStore();
@@ -17,7 +17,7 @@ export default function LiveGroupWorkoutSessions() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const { data } = await axios.get(`http://172.21.133.28:8000/api/live-sessions/${roomId}/participants`);
+        const { data } = await api.get(`/live-sessions/${roomId}/participants`);
         updateRoomParticipants(roomId, data.participant_count);
       } catch (err) {
         console.error('Error fetching room count:', err);

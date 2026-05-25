@@ -216,23 +216,68 @@ class SocialInteractionController extends Controller
         return response()->json($challenges);
     }
 
+    public function getChallenges(Request $request)
+    {
+        $userId = Auth::id();
+        $challenges = Challenge::all();
+
+        // Calculate dynamic progress for the current user
+        $totalSteps = \App\Models\DailyStep::where('user_id', $userId)->sum('step_count');
+        $totalWorkouts = \App\Models\Workout::where('user_id', $userId)->count();
+
+        $joinedIds = ChallengeParticipant::where('user_id', $userId)->pluck('challenge_id')->toArray();
+
+        $mapped = $challenges->map(function ($c) use ($joinedIds, $totalSteps, $totalWorkouts) {
+            $progress = 0;
+            if ($c->type === 'steps') {
+                $progress = min(100, round(($totalSteps / max(1, $c->goal_amount)) * 100));
+            } else if ($c->type === 'workouts') {
+                $progress = min(100, round(($totalWorkouts / max(1, $c->goal_amount)) * 100));
+            }
+
+            return [
+                'id' => $c->id,
+                'title' => $c->title,
+                'description' => $c->description,
+                'participants' => ChallengeParticipant::where('challenge_id', $c->id)->count(),
+                'progress' => $progress,
+                'color' => $c->id % 2 === 0 ? '#EF4444' : '#22D3EE',
+                'timeLeft' => (30 - ($c->id * 2)) . ' days',
+                'isJoined' => in_array($c->id, $joinedIds)
+            ];
+        });
+
+        return response()->json($mapped);
+    }
+
     public function getLeaderboard(Request $request)
     {
-        $rankings = [
-            ['rank' => 1, 'name' => 'David K.', 'score' => '98.5', 'trend' => 'up', 'color' => '#FACC15' ],
-            ['rank' => 2, 'name' => 'Sarah M.', 'score' => '97.2', 'trend' => 'same', 'color' => '#94A3B8' ],
-            ['rank' => 3, 'name' => 'Alex T.', 'score' => '95.8', 'trend' => 'down', 'color' => '#B45309' ],
-            ['rank' => 4, 'name' => 'Emma W.', 'score' => '91.4', 'trend' => 'same', 'color' => 'transparent' ],
-        ];
+        $users = User::withCount('workouts')->withSum('dailySteps', 'step_count')->get();
 
-        $user = Auth::user();
-        $userRank = ['rank' => 5, 'name' => $user->name ?? 'You', 'score' => '92.1', 'trend' => 'up', 'color' => '#3B82F6', 'isUser' => true];
-        
-        array_splice($rankings, 3, 0, [$userRank]);
+        $rankings = $users->map(function ($u) {
+            $workoutScore = $u->workouts_count * 25; 
+            $stepScore = round(($u->daily_steps_sum_step_count ?? 0) / 100, 1);
+            $totalScore = 50 + $workoutScore + $stepScore;
 
-        foreach ($rankings as $idx => &$r) {
-            $r['rank'] = $idx + 1;
-        }
+            return [
+                'id' => $u->id,
+                'name' => $u->name,
+                'score' => number_format($totalScore, 1),
+                'trend' => $u->id % 3 == 0 ? 'up' : ($u->id % 3 == 1 ? 'same' : 'down'),
+                'isUser' => $u->id === Auth::id(),
+            ];
+        });
+
+        $rankings = $rankings->sortByDesc(function ($r) {
+            return (float) $r['score'];
+        })->values();
+
+        $rankings = $rankings->map(function ($r, $idx) {
+            $rank = $idx + 1;
+            $r['rank'] = $rank;
+            $r['color'] = $rank === 1 ? '#FACC15' : ($rank === 2 ? '#94A3B8' : ($rank === 3 ? '#B45309' : ($r['isUser'] ? '#3B82F6' : 'transparent')));
+            return $r;
+        });
 
         return response()->json($rankings);
     }

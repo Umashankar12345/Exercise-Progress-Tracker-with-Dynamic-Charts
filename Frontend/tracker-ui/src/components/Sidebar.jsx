@@ -15,16 +15,10 @@ import {
   Activity,
   HeartPulse,
   Users,
-  Eye,
-  Brain,
-  Trophy,
+  Swords,
   FileText,
-  Download,
-  User,
   ChevronLeft,
   ChevronRight,
-  Flame,
-  BarChart3
 } from 'lucide-react';
 import useStore from '../store/useStore';
 import api from '../api/axios';
@@ -37,7 +31,6 @@ const NAV_GROUPS = [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard },
       { to: '/enterprise', label: 'Analytics', icon: LineChart },
       { to: '/ai-workout', label: 'AI Workout', icon: Activity },
-      { to: '/calendar', label: 'Calendar', icon: Calendar },
     ]
   },
   {
@@ -58,15 +51,13 @@ const NAV_GROUPS = [
     title: 'Social',
     items: [
       { to: '/social', label: 'Community', icon: Users },
-      { to: '/social?tab=challenges', label: 'Challenges', icon: Target },
-      { to: '/social?tab=leaderboard', label: 'Leaderboard', icon: Trophy },
+      { to: '/social?tab=arena', label: 'Arena', icon: Swords },
     ]
   },
   {
     title: 'Reports',
     items: [
       { to: '/report', label: 'Monthly Report', icon: FileText },
-      { to: '/report?action=export', label: 'Export PDF', icon: Download },
     ]
   }
 ];
@@ -77,7 +68,6 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
   const location = useLocation();
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'U';
   const [unreadCount, setUnreadCount] = React.useState(0);
-  const [showLogoutConfirm, setShowLogoutConfirm] = React.useState(false);
 
   const fetchUnreadCount = async () => {
     try {
@@ -112,12 +102,6 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
       }
     };
   }, [user]);
-
-  const confirmLogout = async () => {
-    try { await api.post('/auth/logout'); } catch (_) {}
-    logout();
-    navigate('/login');
-  };
 
   return (
     <aside className={`h-screen bg-[#060B16]/95 border-r border-cyan-500/10 flex flex-col justify-between py-6 overflow-y-auto transition-all duration-300 ease-in-out scrollbar-none ${isCollapsed ? 'w-20 px-2' : 'w-[280px] px-4'}`}>
@@ -239,91 +223,41 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, onClose }) {
         
 
 
-        {/* User Profile Card (Click to go to Profile) */}
+        {/* User Profile Card */}
         <div 
           onClick={() => {
             navigate('/profile');
             if (onClose) onClose();
           }}
-          className={`p-2 rounded-xl bg-white/[0.02] border border-white/5 backdrop-blur-sm group/profile hover:bg-white/[0.04] transition-all duration-300 cursor-pointer relative ${isCollapsed ? 'flex justify-center' : 'flex items-center justify-between'}`}
+          className={`p-3.5 rounded-2xl bg-surface-container border border-outline-variant group hover:border-primary/50 hover:bg-surface-bright hover:shadow-lg transition-all duration-300 cursor-pointer relative overflow-hidden ${isCollapsed ? 'flex justify-center' : 'flex items-center justify-between w-full'}`}
         >
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-500 text-white font-bold text-sm ring-2 ring-cyan-500/30">
+          {/* Ambient Glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+          <div className="flex items-center gap-3 relative z-10 w-full">
+            <div className="relative flex items-center justify-center h-11 w-11 rounded-full bg-primary text-white font-black text-sm ring-2 ring-primary/30 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.3)] shrink-0">
               {initials}
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#060B16] animate-pulse"></span>
             </div>
             {!isCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-semibold text-white tracking-wide truncate">{user?.name ?? 'Guest User'}</span>
-                <span className="text-[9px] font-medium text-cyan-400 uppercase tracking-widest">Level 12 • Streak 5🔥</span>
+                <span className="text-sm font-black text-on-surface tracking-wide truncate group-hover:text-primary transition-colors">{user?.name ?? 'Guest User'}</span>
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mt-0.5">
+                  Profile & Settings
+                </span>
               </div>
             )}
           </div>
-          {!isCollapsed && (
-            <div className="text-slate-400 group-hover/profile:text-white p-1.5 transition-colors">
-              <Settings className="w-4 h-4" />
-            </div>
-          )}
 
           {/* Tooltip for Collapsed Profile */}
           {isCollapsed && (
             <div 
-              className="absolute left-full ml-3 p-3 rounded-xl bg-[#0F172A] border border-cyan-500/20 text-cyan-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/profile:opacity-100 transition-opacity pointer-events-none z-[100] shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
+              className="absolute left-full ml-3 p-3 rounded-xl bg-surface-container border border-outline-variant text-primary text-[10px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
             >
-              View Profile
+              Profile & Settings
             </div>
           )}
         </div>
-
-        {/* Separate Logout Button */}
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className={`group flex items-center rounded-2xl transition-all duration-300 relative text-[#94A3B8] hover:text-red-400 hover:bg-red-500/10 ${isCollapsed ? 'justify-center p-2' : 'px-2 py-2 gap-3'}`}
-        >
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0 bg-white/5 group-hover:bg-red-500/20 group-hover:text-red-400`}>
-            <LogOut className="w-5 h-5" />
-          </div>
-          {!isCollapsed && (
-            <span className="text-sm font-semibold tracking-wide truncate">Log Out</span>
-          )}
-          {isCollapsed && (
-            <div className="absolute left-full ml-3 px-3 py-1.5 rounded-xl bg-[#0F172A] border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-              Log Out
-            </div>
-          )}
-        </button>
       </div>
-
-      {/* Logout Confirmation Modal */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300">
-          <div className="bg-[#060B16] border border-cyan-500/20 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(34,211,238,0.15)] flex flex-col items-center text-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]">
-              <LogOut className="w-10 h-10" />
-            </div>
-            <div>
-              <h3 className="text-2xl font-black text-white tracking-wide">Ready to Leave?</h3>
-              <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
-                You are about to log out of your FitTrack AI session.
-              </p>
-            </div>
-            <div className="flex gap-4 w-full mt-2">
-              <button 
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3.5 px-4 rounded-xl font-black text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all uppercase tracking-widest text-[10px]"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmLogout}
-                className="flex-1 py-3.5 px-4 rounded-xl font-black text-white bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all uppercase tracking-widest text-[10px]"
-              >
-                Log Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   );
 }

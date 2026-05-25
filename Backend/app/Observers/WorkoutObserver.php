@@ -26,28 +26,28 @@ class WorkoutObserver
 
         // ── Event 1: workout.saved ────────────────────────────────────
         WorkoutSaved::dispatch(
-            userId:       $userId,
-            workoutId:    $workout->id,
-            workoutName:  $workout->name,
-            totalSets:    0,   // sets added separately via WorkoutSetController
-            totalVolume:  0.0,
-            savedAt:      now()->toISOString()
+            $userId,
+            $workout->id,
+            $workout->name,
+            0,   // sets added separately via WorkoutSetController
+            0.0,
+            now()->toISOString()
         );
 
         // ── Event 2: streak.updated ───────────────────────────────────
         $streak = $this->calculateStreak($userId);
         StreakUpdated::dispatch(
-            userId:        $userId,
-            currentStreak: $streak,
-            bestStreak:    $streak, // simplified — track best separately in production
-            updatedAt:     now()->toISOString()
+            $userId,
+            $streak,
+            $streak, // simplified — track best separately in production
+            now()->toISOString()
         );
 
         // ── Event 3: muscle.balance.updated ──────────────────────────
         MuscleBalanceUpdated::dispatch(
-            userId:           $userId,
-            distribution:     $this->getMuscleDistribution($userId),
-            imbalanceWarning: 'Push/pull imbalance detected'
+            $userId,
+            $this->getMuscleDistribution($userId),
+            'Push/pull imbalance detected'
         );
 
         // ── Event 4: goal.progress (relevant goals only) ──────────────
@@ -66,14 +66,14 @@ class WorkoutObserver
             $result = $this->goalService->calcPercent($goal, $userId);
 
             GoalProgress::dispatch(
-                userId:       $userId,
-                goalId:       $result['goal_id'],
-                pct:          $result['pct'],
-                currentKg:    $result['current_kg'],
-                targetKg:     $result['target_kg'],
-                exerciseName: $result['exercise_name'],
-                status:       $result['status'],
-                achievedAt:   $result['achieved_at']
+                $userId,
+                $result['goal_id'],
+                $result['pct'],
+                $result['current_kg'],
+                $result['target_kg'],
+                $result['exercise_name'],
+                $result['status'],
+                $result['achieved_at']
             );
         }
 

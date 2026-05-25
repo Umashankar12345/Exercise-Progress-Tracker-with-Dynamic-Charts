@@ -4,30 +4,24 @@ import api from '../../api/axios';
 import AchievementCard from './AchievementCard';
 import useStore from '../../store/useStore';
 
+import GlobalLoader from './../ui/GlobalLoader';
+
 export default function FitnessFeed() {
-  const { user } = useStore();
-  const [feed, setFeed] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user, feed, fetchFeed } = useStore();
+  const [loading, setLoading] = useState(feed.length === 0);
   const [newPost, setNewPost] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [activeCommentPostId, setActiveCommentPostId] = useState(null);
   const [commentText, setCommentText] = useState('');
 
-  const fetchFeed = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get('/posts');
-      setFeed(data);
-    } catch (err) {
-      console.error('Error fetching feed:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchFeed();
-  }, []);
+    const initFetch = async () => {
+      if (feed.length === 0) setLoading(true);
+      await fetchFeed();
+      setLoading(false);
+    };
+    initFetch();
+  }, [fetchFeed]);
 
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -46,17 +40,8 @@ export default function FitnessFeed() {
 
   const handleToggleLike = async (postId) => {
     try {
-      const { data } = await api.post(`/posts/${postId}/like`);
-      setFeed(prev => prev.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            liked_by_me: data.liked,
-            likes_count: data.likes_count
-          };
-        }
-        return post;
-      }));
+      await api.post(`/posts/${postId}/like`);
+      fetchFeed(); // Silently update global state
     } catch (err) {
       console.error('Error toggling like:', err);
     }
@@ -66,26 +51,9 @@ export default function FitnessFeed() {
     e.preventDefault();
     if (!commentText.trim()) return;
     try {
-      const { data } = await api.post(`/posts/${postId}/comments`, { content: commentText });
+      await api.post(`/posts/${postId}/comments`, { content: commentText });
       setCommentText('');
-      setFeed(prev => prev.map(post => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            comments_count: post.comments_count + 1,
-            comments: [...(post.comments || []), {
-              id: data.id,
-              content: data.content,
-              created_at: data.created_at,
-              user: {
-                name: user?.name || 'You',
-                avatar: user?.avatar_url
-              }
-            }]
-          };
-        }
-        return post;
-      }));
+      fetchFeed(); // Silently update global state
     } catch (err) {
       console.error('Error adding comment:', err);
     }
@@ -118,10 +86,8 @@ export default function FitnessFeed() {
 
       {/* Feed List */}
       {loading ? (
-        <div className="flex flex-col gap-6">
-          {[1, 2].map(i => (
-            <div key={i} className="w-full rounded-2xl border border-white/5 bg-[#0F172A]/65 p-5 h-44 animate-pulse" />
-          ))}
+        <div className="py-8">
+          <GlobalLoader text="Syncing Community..." />
         </div>
       ) : feed.length === 0 ? (
         <div className="p-16 text-center rounded-2xl border border-white/5 bg-[#0F172A]/65">

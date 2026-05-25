@@ -161,30 +161,42 @@ export default function Health() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Weight (kg)</label>
-                                    <input 
-                                        type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} required
-                                        className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white"
-                                        placeholder="75.0"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <button type="button" onClick={() => setWeight(p => (parseFloat(p||75) - 0.5).toFixed(1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
+                                        <input 
+                                            type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} required
+                                            className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-2 py-3 text-center text-sm font-black text-[#00E5FF] focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
+                                            placeholder="75.0"
+                                        />
+                                        <button type="button" onClick={() => setWeight(p => (parseFloat(p||75) + 0.5).toFixed(1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
+                                    </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Height (cm)</label>
-                                    <input 
-                                        type="number" step="0.1" value={height} onChange={e => setHeight(e.target.value)} required
-                                        className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white"
-                                        placeholder="180"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <button type="button" onClick={() => setHeight(p => String(parseInt(p||180) - 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
+                                        <input 
+                                            type="number" step="1" value={height} onChange={e => setHeight(e.target.value)} required
+                                            className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-2 py-3 text-center text-sm font-black text-[#00E5FF] focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
+                                            placeholder="180"
+                                        />
+                                        <button type="button" onClick={() => setHeight(p => String(parseInt(p||180) + 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Age</label>
-                                    <input 
-                                        type="number" value={age} onChange={e => setAge(e.target.value)} required
-                                        className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all text-white"
-                                        placeholder="25"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <button type="button" onClick={() => setAge(p => String(parseInt(p||25) - 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">-</button>
+                                        <input 
+                                            type="number" value={age} onChange={e => setAge(e.target.value)} required
+                                            className="w-full bg-[#1e293b]/60 border border-white/10 rounded-xl px-2 py-3 text-center text-sm font-black text-[#00E5FF] focus:border-[#00E5FF] focus:ring-1 focus:ring-[#00E5FF] outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.3)]"
+                                            placeholder="25"
+                                        />
+                                        <button type="button" onClick={() => setAge(p => String(parseInt(p||25) + 1))} className="w-12 h-11 flex items-center justify-center bg-white/5 hover:bg-[#00E5FF]/20 text-white rounded-xl font-bold transition-colors border border-white/10 hover:border-[#00E5FF]/50">+</button>
+                                    </div>
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Gender</label>
@@ -319,8 +331,8 @@ export default function Health() {
                                                             <span className="text-gray-400">Protein</span>
                                                             <span>{plan[view].protein}g</span>
                                                         </div>
-                                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-purple-500" style={{ width: '80%' }} />
+                                                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                                            <div className="h-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)] transition-all duration-1000 ease-out" style={{ width: '80%' }} />
                                                         </div>
                                                     </div>
                                                     <div>
@@ -328,8 +340,8 @@ export default function Health() {
                                                             <span className="text-gray-400">Carbohydrates</span>
                                                             <span>{plan[view].carbs}g</span>
                                                         </div>
-                                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-cyan-400" style={{ width: '65%' }} />
+                                                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                                            <div className="h-full bg-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.5)] transition-all duration-1000 ease-out delay-150" style={{ width: '65%' }} />
                                                         </div>
                                                     </div>
                                                     <div>
@@ -337,8 +349,8 @@ export default function Health() {
                                                             <span className="text-gray-400">Fats</span>
                                                             <span>{plan[view].fats}g</span>
                                                         </div>
-                                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-yellow-400" style={{ width: '45%' }} />
+                                                        <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
+                                                            <div className="h-full bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.5)] transition-all duration-1000 ease-out delay-300" style={{ width: '45%' }} />
                                                         </div>
                                                     </div>
                                                 </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Calendar, TrendingUp, Sparkles, Award } from 'lucide-react';
-import api from '../../api/axios';
+import useStore from '../../store/useStore';
 import { useWorkoutStateSync } from '../../hooks/useWorkoutStateSync';
 import { ResponsiveContainer, AreaChart, Area, XAxis, Tooltip as RechartsTooltip } from 'recharts';
 
@@ -28,27 +28,31 @@ function HeatmapSkeleton() {
 }
 
 export default function WorkoutHeatmap() {
-  const [loading, setLoading] = useState(true);
-  const [heatmapData, setHeatmapData] = useState([]);
-  const [workouts, setWorkouts] = useState([]);
+  const { dashboardHeatmap, dashboardHeatmapWorkouts, fetchHeatmapData } = useStore();
+  const [loading, setLoading] = useState(!dashboardHeatmap);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [streak, setStreak] = useState(0);
   const [selectedDay, setSelectedDay] = useState(null);
 
-  const fetchHeatmapAndWorkouts = useCallback(async () => {
-    try {
-      const [heatmapRes, workoutsRes] = await Promise.all([
-        api.get('/workouts/heatmap'),
-        api.get('/workouts')
-      ]);
-      setHeatmapData(heatmapRes.data || []);
-      setWorkouts(workoutsRes.data || []);
+  const initData = useCallback(async () => {
+    if (!dashboardHeatmap) setLoading(true);
+    await fetchHeatmapData();
+    setLoading(false);
+  }, [dashboardHeatmap, fetchHeatmapData]);
 
-      const total = (heatmapRes.data || []).reduce((s, d) => s + (d.count || 0), 0);
+  // Fetch data on mount
+  useEffect(() => {
+    initData();
+  }, [initData]);
+
+  // Recalculate totals and streaks whenever the global data changes
+  useEffect(() => {
+    if (dashboardHeatmap) {
+      const total = dashboardHeatmap.reduce((s, d) => s + (d.count || 0), 0);
       setTotalWorkouts(total);
 
       // Calculate current streak from data
-      const dateSet = new Set((heatmapRes.data || []).filter(d => d.count > 0).map(d => d.date));
+      const dateSet = new Set(dashboardHeatmap.filter(d => d.count > 0).map(d => d.date));
       let s = 0;
       const today = new Date();
       for (let i = 0; i < 365; i++) {
@@ -63,28 +67,11 @@ export default function WorkoutHeatmap() {
         }
       }
       setStreak(s);
-    } catch (err) {
-      console.error("Failed to load heatmap data", err);
-    } finally {
-      setLoading(false);
     }
-  }, []);
-
-  // Fetch data on mount
-  useEffect(() => {
-    fetchHeatmapAndWorkouts();
-  }, [fetchHeatmapAndWorkouts]);
-
-  // Polling fallback to keep it updated in real-time (every 10 seconds)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      fetchHeatmapAndWorkouts();
-    }, 10000);
-    return () => clearInterval(timer);
-  }, [fetchHeatmapAndWorkouts]);
+  }, [dashboardHeatmap]);
 
   // Instant state synchronization hook
-  useWorkoutStateSync(fetchHeatmapAndWorkouts);
+  useWorkoutStateSync(fetchHeatmapData);
 
   if (loading) {
     return <HeatmapSkeleton />;
@@ -92,7 +79,7 @@ export default function WorkoutHeatmap() {
 
   // 1. Generate 365 days of data, merging with API data using Map
   const heatmapMap = new Map(
-    (heatmapData || []).map(h => [h.date, h])
+    (dashboardHeatmap || []).map(h => [h.date, h])
   );
 
   const days = Array.from({ length: 365 }).map((_, i) => {
@@ -129,7 +116,7 @@ export default function WorkoutHeatmap() {
 
   // 3. Map workouts to dates for fast drill-down lookups
   const workoutsMap = new Map();
-  (workouts || []).forEach(w => {
+  (dashboardHeatmapWorkouts || []).forEach(w => {
     const dateStr = w.started_at ? w.started_at.split('T')[0] : w.created_at.split('T')[0];
     if (!workoutsMap.has(dateStr)) {
       workoutsMap.set(dateStr, []);
@@ -139,12 +126,12 @@ export default function WorkoutHeatmap() {
 
   // 4. Calculate AI Insights
   const getAIInsights = () => {
-    if (!heatmapData || heatmapData.length === 0) {
+    if (!dashboardHeatmap || dashboardHeatmap.length === 0) {
       return { productiveMonth: 'N/A', consistency: 'Steady', recovery: 'Adequate' };
     }
 
     const monthCalories = {};
-    heatmapData.forEach(d => {
+    dashboardHeatmap.forEach(d => {
       const monthStr = new Date(d.date).toLocaleDateString('en-US', { month: 'long' });
       monthCalories[monthStr] = (monthCalories[monthStr] || 0) + (d.calories || 0);
     });
@@ -167,7 +154,7 @@ export default function WorkoutHeatmap() {
     let last30DaysCount = 0;
     let prior30DaysCount = 0;
 
-    heatmapData.forEach(d => {
+    dashboardHeatmap.forEach(d => {
       const dateVal = new Date(d.date);
       if (dateVal >= thirtyDaysAgo && dateVal <= today) {
         last30DaysCount += d.count || 0;
@@ -180,7 +167,7 @@ export default function WorkoutHeatmap() {
 
     let consecutiveDays = 0;
     let maxConsecutive = 0;
-    const sortedData = [...heatmapData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedData = [...dashboardHeatmap].sort((a, b) => new Date(a.date) - new Date(b.date));
     sortedData.forEach(d => {
       if (d.count > 0) {
         consecutiveDays++;
@@ -260,21 +247,19 @@ export default function WorkoutHeatmap() {
 
   const weeklyTrend = getWeeklyTrend();
 
-  // 7. Gradient Intensity Color System
+  // 7. GitHub Style Green Intensity Color System
   const getColor = (intensity) => {
     switch (intensity) {
-      case 1: return 'bg-[#38BDF8]/20 border-[#38BDF8]/30 text-[#38BDF8]';
-      case 2: return 'bg-[#06B6D4]/40 border-[#06B6D4]/40 text-[#06B6D4]';
-      case 3: return 'bg-[#A855F7]/60 border-[#A855F7]/50 text-[#A855F7]';
-      case 4: return 'bg-gradient-to-br from-[#EC4899] to-[#F59E0B] border-transparent text-white';
-      default: return 'bg-[#0F172A] border-white/5 text-white/5';
+      case 1: return 'bg-[#0e4429] border-transparent';
+      case 2: return 'bg-[#006d32] border-transparent';
+      case 3: return 'bg-[#26a641] border-transparent';
+      case 4: return 'bg-[#39d353] border-transparent';
+      default: return 'bg-[#161b22] border-white/5 text-white/5';
     }
   };
 
   const getGlow = (intensity) => {
-    if (intensity === 4) return { boxShadow: '0 0 10px rgba(245,158,11,0.6)' };
-    if (intensity === 3) return { boxShadow: '0 0 6px rgba(168,85,247,0.4)' };
-    return {};
+    return {}; // GitHub style is flat and professional, no glows
   };
 
   return (
@@ -312,11 +297,11 @@ export default function WorkoutHeatmap() {
         {/* Legend */}
         <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-v2-soft-gray tracking-widest">
           <span>Less</span>
-          <div className="w-3 h-3 rounded bg-[#0F172A] border border-white/5" />
-          <div className="w-3 h-3 rounded bg-[#38BDF8]/20 border border-[#38BDF8]/30" />
-          <div className="w-3 h-3 rounded bg-[#06B6D4]/40 border border-[#06B6D4]/45" />
-          <div className="w-3 h-3 rounded bg-[#A855F7]/60 border border-[#A855F7]/50" />
-          <div className="w-3 h-3 rounded bg-gradient-to-br from-[#EC4899] to-[#F59E0B] shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#161b22] border border-white/5" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#0e4429]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#006d32]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#26a641]" />
+          <div className="w-3 h-3 rounded-[2px] bg-[#39d353]" />
           <span>More</span>
         </div>
       </div>
@@ -347,7 +332,7 @@ export default function WorkoutHeatmap() {
                   key={dayIndex}
                   whileHover={{ scale: 1.6, zIndex: 10 }}
                   onClick={() => setSelectedDay(day)}
-                  className={`w-3.5 h-3.5 rounded-[3px] border cursor-pointer transition-all duration-300 relative group/cell ${getColor(day.intensity)}`}
+                  className={`w-3.5 h-3.5 rounded-[2px] border cursor-pointer transition-all duration-300 relative group/cell ${getColor(day.intensity)}`}
                   style={getGlow(day.intensity)}
                 >
                   {/* Rich Hover Tooltip */}
@@ -356,9 +341,9 @@ export default function WorkoutHeatmap() {
                       <div className="text-white/50 mb-0.5">{day.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
                       {day.intensity > 0 ? (
                         <>
-                          <div className="text-[#06B6D4] font-black">{INTENSITY_LABELS[day.intensity]} Level</div>
+                          <div className="text-[#39d353] font-black">{INTENSITY_LABELS[day.intensity]} Level</div>
                           <div className="text-white/70">{day.count} workout{day.count !== 1 ? 's' : ''}</div>
-                          {day.calories > 0 && <div className="text-[#FACC15]">{Math.round(day.calories)} kcal</div>}
+                          {day.calories > 0 && <div className="text-[#39d353]">{Math.round(day.calories)} kcal</div>}
                           <div className="text-white/40 text-[8px] mt-1 italic">Click for analytics drill-down</div>
                         </>
                       ) : (
@@ -385,7 +370,7 @@ export default function WorkoutHeatmap() {
           >
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" style={{ animationDuration: '3s' }} />
+                <Sparkles className="w-4 h-4 text-[#39d353] animate-spin" style={{ animationDuration: '3s' }} />
                 Analytics Drill-Down: {selectedDay.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </h4>
               <button
@@ -402,10 +387,10 @@ export default function WorkoutHeatmap() {
                 <div className="rounded-2xl bg-white/[0.02] border border-white/5 p-4 flex flex-col justify-between">
                   <div>
                     <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider block mb-1">Energy Burned</span>
-                    <span className="text-2xl font-black text-white">{Math.round(selectedDay.calories)} <span className="text-xs font-normal text-purple-400">kcal</span></span>
+                    <span className="text-2xl font-black text-white">{Math.round(selectedDay.calories)} <span className="text-xs font-normal text-[#39d353]">kcal</span></span>
                   </div>
                   <div className="mt-4 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#39d353] animate-pulse" />
                     <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{selectedDay.count} active session{selectedDay.count > 1 ? 's' : ''}</span>
                   </div>
                 </div>
@@ -468,11 +453,11 @@ export default function WorkoutHeatmap() {
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5">
               <span className="text-[8px] font-black text-white/30 uppercase tracking-widest block mb-1">Peak Month</span>
-              <span className="text-xs font-black text-[#00E5FF] uppercase block truncate">{aiInsights.productiveMonth}</span>
+              <span className="text-xs font-black text-[#39d353] uppercase block truncate">{aiInsights.productiveMonth}</span>
             </div>
             <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5">
               <span className="text-[8px] font-black text-white/30 uppercase tracking-widest block mb-1">Consistency</span>
-              <span className="text-xs font-black text-purple-400 uppercase block truncate">{aiInsights.consistency}</span>
+              <span className="text-xs font-black text-[#26a641] uppercase block truncate">{aiInsights.consistency}</span>
             </div>
             <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5">
               <span className="text-[8px] font-black text-white/30 uppercase tracking-widest block mb-1">Recovery</span>
@@ -513,12 +498,12 @@ export default function WorkoutHeatmap() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-col">
             <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+              <TrendingUp className="w-3.5 h-3.5 text-[#39d353]" />
               Weekly Energy Consumption (12-Week Trend)
             </h4>
             <p className="text-[10px] text-v2-soft-gray">Caloric output aggregation per week</p>
           </div>
-          <span className="text-[10px] font-black text-[#A855F7] bg-[#A855F7]/10 px-2 py-0.5 rounded border border-[#A855F7]/20 uppercase tracking-wider">
+          <span className="text-[10px] font-black text-[#39d353] bg-[#39d353]/10 px-2 py-0.5 rounded border border-[#39d353]/20 uppercase tracking-wider">
             12 Wk Sparkline
           </span>
         </div>
@@ -528,8 +513,8 @@ export default function WorkoutHeatmap() {
             <AreaChart data={weeklyTrend}>
               <defs>
                 <linearGradient id="calorieGlow" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#A855F7" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#A855F7" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#39d353" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#39d353" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="week" stroke="rgba(255,255,255,0.2)" fontSize={8} tickLine={false} axisLine={false} />
@@ -539,7 +524,7 @@ export default function WorkoutHeatmap() {
                 itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 'black' }}
                 formatter={(value) => [`${value} kcal`, 'Energy']}
               />
-              <Area type="monotone" dataKey="calories" stroke="#A855F7" strokeWidth={2} fillOpacity={1} fill="url(#calorieGlow)" />
+              <Area type="monotone" dataKey="calories" stroke="#39d353" strokeWidth={2} fillOpacity={1} fill="url(#calorieGlow)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

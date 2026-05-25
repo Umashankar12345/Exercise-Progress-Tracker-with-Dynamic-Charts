@@ -3,10 +3,32 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 import JarvisFloating from './JarvisFloating';
+import useStore from '../store/useStore';
 
 export default function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+  
+  // Global Data Pre-fetch (SWR Architecture)
+  const { 
+    fetchFeed, 
+    fetchArenaChallenges, 
+    fetchArenaLeaderboard, 
+    fetchExerciseLibrary,
+    fetchDashboardAnalytics,
+    fetchHeatmapData
+  } = useStore();
+
+  React.useEffect(() => {
+    // Fire all fetchers silently in the background when the app loads
+    // so that when a user clicks a tab, the data is instantly available
+    fetchDashboardAnalytics(true);
+    fetchHeatmapData();
+    fetchFeed(true);
+    fetchArenaChallenges(true);
+    fetchArenaLeaderboard(true);
+    fetchExerciseLibrary(true);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-background selection:bg-primary/30 selection:text-primary relative overflow-x-hidden">

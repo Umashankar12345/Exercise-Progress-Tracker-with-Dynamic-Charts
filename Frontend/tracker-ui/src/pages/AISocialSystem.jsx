@@ -1,21 +1,13 @@
 import React from 'react';
-import { Users, Target, Trophy } from 'lucide-react';
+import { Users, Swords } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import useStore from '../store/useStore';
 
 // Components
-import FitnessStories from '../components/social/FitnessStories';
 import FitnessFeed from '../components/social/FitnessFeed';
 import AICommunityRankings from '../components/social/AICommunityRankings';
 import LiveCommunityChallenges from '../components/social/LiveCommunityChallenges';
 import TeamChallenges from '../components/social/TeamChallenges';
-import FollowFriendsManager from '../components/social/FollowFriendsManager';
-import TransformationShowcase from '../components/social/TransformationShowcase';
-import WorkoutSharingSystem from '../components/social/WorkoutSharingSystem';
-import AIWorkoutMatchmaking from '../components/social/AIWorkoutMatchmaking';
-import LiveGroupWorkoutSessions from '../components/social/LiveGroupWorkoutSessions';
-import CommunityRecoveryRooms from '../components/social/CommunityRecoveryRooms';
-import RealtimeEventStreaming from '../components/social/RealtimeEventStreaming';
 
 export default function AISocialSystem() {
   const { user, fetchSocialState } = useStore();
@@ -47,7 +39,7 @@ export default function AISocialSystem() {
               <span className="text-sm font-black text-white tracking-widest uppercase">Global Fitness Network</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                  <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                 <span className="text-[10px] text-[#10B981] font-bold uppercase tracking-widest">1,482 Athletes Online</span>
+                 <span className="text-[10px] text-[#10B981] font-bold uppercase tracking-widest">Network Active</span>
               </div>
             </div>
           </div>
@@ -67,79 +59,37 @@ export default function AISocialSystem() {
             Community
           </button>
           <button
-            onClick={() => setTab('challenges')}
+            onClick={() => setTab('arena')}
             className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer flex-1 md:flex-initial ${
-              activeTab === 'challenges'
+              activeTab === 'arena'
                 ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/15 border border-cyan-500/30 text-white shadow-[0_0_15px_rgba(6,182,212,0.15)] font-semibold'
                 : 'text-[#94A3B8] hover:text-white hover:bg-white/5 border border-transparent'
             }`}
           >
-            <Target className="w-4 h-4" />
-            Challenges
-          </button>
-          <button
-            onClick={() => setTab('leaderboard')}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 cursor-pointer flex-1 md:flex-initial ${
-              activeTab === 'leaderboard'
-                ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/15 border border-cyan-500/30 text-white shadow-[0_0_15px_rgba(6,182,212,0.15)] font-semibold'
-                : 'text-[#94A3B8] hover:text-white hover:bg-white/5 border border-transparent'
-            }`}
-          >
-            <Trophy className="w-4 h-4" />
-            Leaderboard
+            <Swords className="w-4 h-4" />
+            Arena
           </button>
         </div>
       </div>
 
       {/* Community Tab Content */}
       {activeTab === 'community' && (
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          {/* Left Column: Matchmaking & Friends (25%) */}
-          <div className="hidden xl:flex flex-col xl:col-span-3 gap-6">
-            <AIWorkoutMatchmaking />
-            <FollowFriendsManager />
-            <WorkoutSharingSystem />
-            <CommunityRecoveryRooms />
-          </div>
-
-          {/* Center Column: Feed & Stories (50%) */}
-          <div className="flex flex-col xl:col-span-6 gap-6">
-            <FitnessStories />
-            <TransformationShowcase />
-            <div className="flex-1 flex flex-col gap-6">
-               <FitnessFeed />
-            </div>
-          </div>
-
-          {/* Right Column: Events & Stream (25%) */}
-          <div className="flex flex-col xl:col-span-3 gap-6">
-            <RealtimeEventStreaming />
+        <div className="flex flex-col gap-6">
+          <div className="w-full xl:w-2/3 mx-auto flex flex-col gap-6">
+            <FitnessFeed />
           </div>
         </div>
       )}
 
-      {/* Challenges Tab Content */}
-      {activeTab === 'challenges' && (
+      {/* Arena Tab Content */}
+      {activeTab === 'arena' && (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           <div className="flex flex-col xl:col-span-8 gap-6">
             <LiveCommunityChallenges />
-            <TeamChallenges />
           </div>
           <div className="flex flex-col xl:col-span-4 gap-6">
-            <LiveGroupWorkoutSessions />
-            <RealtimeEventStreaming />
-          </div>
-        </div>
-      )}
-
-      {/* Leaderboard Tab Content */}
-      {activeTab === 'leaderboard' && (
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          <div className="flex flex-col xl:col-span-8 gap-6">
             <AICommunityRankings />
-          </div>
-          <div className="flex flex-col xl:col-span-4 gap-6">
-            <RealtimeEventStreaming />
+            <TeamChallenges />
           </div>
         </div>
       )}

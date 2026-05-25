@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, Share2, Plus, Calendar as CalendarIcon, Menu, Flame, Droplet, Moon, Sun, Zap } from 'lucide-react';
+import { Search, Bell, Share2, Plus, Calendar as CalendarIcon, Menu, Flame, Droplet, Moon, Sun, Zap, LogOut } from 'lucide-react';
 import api from '../api/axios';
 import useStore from '../store/useStore';
 
@@ -17,7 +17,7 @@ const PAGE_TITLES = {
 };
 
 export default function Navbar({ onMenuClick }) {
-  const { theme, toggleTheme } = useStore();
+  const { theme, toggleTheme, logout } = useStore();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const title = PAGE_TITLES[pathname] ?? 'FitTrack AI';
@@ -29,7 +29,14 @@ export default function Navbar({ onMenuClick }) {
 
   const [notifications, setNotifications] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef(null);
+
+  const confirmLogout = async () => {
+    try { await api.post('/auth/logout'); } catch {}
+    logout();
+    navigate('/login');
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -111,6 +118,7 @@ export default function Navbar({ onMenuClick }) {
   };
 
   return (
+    <>
     <header className="h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant px-4 md:px-8 flex items-center sticky top-0 z-40">
       <button 
         onClick={onMenuClick}
@@ -220,7 +228,47 @@ export default function Navbar({ onMenuClick }) {
           <span className="hidden sm:inline">NEW SESSION</span>
           <span className="sm:hidden">NEW</span>
         </button>
+
+        <button 
+          onClick={() => setShowLogoutConfirm(true)}
+          className="ml-2 flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 px-3 md:px-4 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all hover:-translate-y-0.5 active:translate-y-0 border border-red-500/20"
+        >
+          <LogOut className="w-4 h-4 stroke-[2]" />
+          <span className="hidden md:inline">LOG OUT</span>
+        </button>
       </div>
     </header>
+
+    {/* Logout Confirmation Modal */}
+    {showLogoutConfirm && (
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md transition-all duration-300">
+        <div className="bg-[#060B16] border border-[#00E5FF]/20 rounded-3xl p-8 max-w-sm w-full shadow-[0_0_40px_rgba(34,211,238,0.15)] flex flex-col items-center text-center gap-6 animate-in zoom-in-95 duration-200">
+          <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]">
+            <LogOut className="w-10 h-10" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-black text-white tracking-wide">Ready to Leave?</h3>
+            <p className="text-sm text-gray-400 mt-2 leading-relaxed">
+              You are about to log out of your FitTrack AI session.
+            </p>
+          </div>
+          <div className="flex gap-4 w-full mt-2">
+            <button 
+              onClick={() => setShowLogoutConfirm(false)}
+              className="flex-1 py-3.5 px-4 rounded-xl font-black text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all uppercase tracking-widest text-[10px]"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={confirmLogout}
+              className="flex-1 py-3.5 px-4 rounded-xl font-black text-white bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all uppercase tracking-widest text-[10px]"
+            >
+              Log Out
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

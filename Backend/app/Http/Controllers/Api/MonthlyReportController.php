@@ -13,6 +13,81 @@ use Carbon\Carbon;
 
 class MonthlyReportController extends Controller
 {
+    /**
+     * GET /api/reports/monthly/summary?month=YYYY-MM
+     * Returns JSON metrics for the Monthly Report UI (no PDF).
+     */
+    public function summary(Request $request)
+    {
+        $user = $request->user();
+
+        $monthParam = $request->query('month');
+        if ($monthParam) {
+            $request->validate([
+                'month' => ['regex:/^\d{4}-\d{2}$/'],
+            ]);
+            $base = Carbon::createFromFormat('Y-m', $monthParam)->startOfMonth();
+            $startOfMonth = $base->copy()->startOfMonth();
+            $endOfMonth = $base->copy()->endOfMonth();
+        } else {
+            $startOfMonth = Carbon::now()->startOfMonth();
+            $endOfMonth = Carbon::now()->endOfMonth();
+        }
+
+        $totalWorkouts = Workout::where('user_id', $user->id)
+            ->whereBetween('started_at', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        $totalCalories = (int) Workout::where('user_id', $user->id)
+            ->whereBetween('started_at', [$startOfMonth, $endOfMonth])
+            ->sum('calories_burned');
+
+        $avgDuration = (int) round(Workout::where('user_id', $user->id)
+            ->whereBetween('started_at', [$startOfMonth, $endOfMonth])
+            ->avg('duration') ?? 0);
+
+        $totalVolume = (float) (WorkoutSet::whereHas('workoutExercise.workout', function ($q) use ($user, $startOfMonth, $endOfMonth) {
+            $q->where('user_id', $user->id)->whereBetween('started_at', [$startOfMonth, $endOfMonth]);
+        })->selectRaw('SUM(reps * weight) as total')->value('total') ?? 0);
+
+        $prsAchieved = (int) WorkoutSet::whereHas('workoutExercise.workout', function ($q) use ($user, $startOfMonth, $endOfMonth) {
+            $q->where('user_id', $user->id)->whereBetween('started_at', [$startOfMonth, $endOfMonth]);
+        })
+            ->join('workout_exercises', 'workout_sets.workout_exercise_id', '=', 'workout_exercises.id')
+            ->groupBy('workout_exercises.exercise_id')
+            ->get()
+            ->count();
+
+        $topExercises = Workout::where('workouts.user_id', $user->id)
+            ->whereBetween('started_at', [$startOfMonth, $endOfMonth])
+            ->join('workout_exercises', 'workouts.id', '=', 'workout_exercises.workout_id')
+            ->join('exercises', 'workout_exercises.exercise_id', '=', 'exercises.id')
+            ->selectRaw('exercises.name as name, COUNT(workout_exercises.id) as sessions')
+            ->groupBy('exercises.name')
+            ->orderByRaw('COUNT(workout_exercises.id) DESC')
+            ->limit(5)
+            ->get();
+
+        return response()->json([
+            'month' => Carbon::parse($startOfMonth)->format('F Y'),
+            'period' => [
+                'start' => $startOfMonth->toDateString(),
+                'end' => $endOfMonth->toDateString(),
+            ],
+            'workouts' => [
+                'count' => $totalWorkouts,
+                'total_calories' => $totalCalories,
+                'avg_duration_min' => $avgDuration,
+                'total_volume' => $totalVolume,
+            ],
+            'prs' => [
+                'count' => $prsAchieved,
+            ],
+            'top_exercises' => $topExercises,
+            'generated_at' => Carbon::now()->toISOString(),
+        ]);
+    }
+
     public function getReport(Request $request)
     {
         $user = $request->user();

@@ -1,57 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  LineChart, Line, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
-} from 'recharts';
-import { 
-  Dumbbell, Flame, Zap, Scale, Droplet, Moon, Heart, Activity, ShieldCheck, RefreshCw, BarChart2 
+  Dumbbell, Flame, Zap, Scale, Droplet, Moon, Heart, ShieldCheck, RefreshCw, BarChart2, Plus, Minus
 } from 'lucide-react';
 import api from '../api/axios';
 import useStore from '../store/useStore';
+import GlobalLoader from '../components/ui/GlobalLoader';
+import WorkoutHeatmap from '../components/dashboard/WorkoutHeatmap';
 
 export default function AnalyticsDashboard() {
-  const { user } = useStore();
-  const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, dashboardAnalytics, fetchDashboardAnalytics } = useStore();
+  const [loading, setLoading] = useState(!dashboardAnalytics);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchAnalytics = async (silent = false) => {
-    if (!silent) setLoading(true);
+  const handleRefresh = async (silent = false) => {
+    if (!silent && !dashboardAnalytics) setLoading(true);
     else setIsRefreshing(true);
-    try {
-      const res = await api.get('/dashboard/analytics');
-      setAnalytics(res.data);
-    } catch (err) {
-      console.error('Failed to fetch analytics:', err);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
+    await fetchDashboardAnalytics();
+    setLoading(false);
+    setIsRefreshing(false);
   };
 
   useEffect(() => {
-    fetchAnalytics();
-    const interval = setInterval(() => fetchAnalytics(true), 15000);
+    handleRefresh(dashboardAnalytics !== null);
+    const interval = setInterval(() => handleRefresh(true), 15000);
     return () => clearInterval(interval);
   }, []);
 
-  // Format the chart data safely
-  const chartData = Object.entries(analytics?.workout_chart || {}).map(([day, value]) => ({
-    day,
-    value
-  }));
+  const chartData = dashboardAnalytics?.weekly_progress || [];
+
+  const handleUpdateHealth = (key, delta) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const currentValue = dashboardAnalytics?.[key] ?? 0;
+    // Hydration increments by 0.25L, Sleep by 0.5h
+    const newValue = Math.max(0, parseFloat((currentValue + delta).toFixed(2)));
+    
+    useStore.getState().logHealthMetric(todayStr, {
+      [key === 'hydration' ? 'water_intake' : 'sleep_hours']: newValue
+    });
+  };
 
   // Find max value in chart data for coloring / scaling
   const maxWorkoutCount = Math.max(...chartData.map(d => d.value), 1);
 
-  const weightChartData = analytics?.weight_chart || [];
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070B14] flex flex-col items-center justify-center gap-4 text-v2-soft-gray">
-        <Activity className="w-10 h-10 text-cyan-400 animate-pulse" />
-        <span className="text-xs font-black uppercase tracking-[0.25em] animate-pulse">Syncing Analytics Core...</span>
-      </div>
+      <GlobalLoader fullScreen={true} text="Syncing Analytics Core..." />
     );
   }
 
@@ -69,10 +63,6 @@ export default function AnalyticsDashboard() {
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-white">Analytics Hub</h1>
-            <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest mt-0.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Connected to local database • real metrics
-            </p>
           </div>
         </div>
 
@@ -82,7 +72,7 @@ export default function AnalyticsDashboard() {
             <span className="text-xs font-black text-white">{user?.name ?? 'Guest Athlete'}</span>
           </div>
           <button 
-            onClick={() => fetchAnalytics(true)}
+            onClick={() => handleRefresh(false)}
             className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <RefreshCw className={`w-4 h-4 text-cyan-400 ${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
@@ -102,7 +92,7 @@ export default function AnalyticsDashboard() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black text-v2-soft-gray uppercase tracking-widest">Logged Sessions</span>
             <span className="text-3xl font-black text-white group-hover:text-cyan-400 transition-colors">
-              {analytics?.total_workouts ?? 0}
+              {dashboardAnalytics?.total_workouts ?? 0}
             </span>
             <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest">All-time count</span>
           </div>
@@ -120,7 +110,7 @@ export default function AnalyticsDashboard() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black text-v2-soft-gray uppercase tracking-widest">Energy Burned</span>
             <span className="text-3xl font-black text-white group-hover:text-pink-400 transition-colors">
-              {analytics?.total_calories?.toLocaleString() ?? 0}
+              {dashboardAnalytics?.total_calories?.toLocaleString() ?? 0}
             </span>
             <span className="text-[9px] font-bold text-pink-400 uppercase tracking-widest">Total kcal</span>
           </div>
@@ -138,7 +128,7 @@ export default function AnalyticsDashboard() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black text-v2-soft-gray uppercase tracking-widest">Weekly Tonnage</span>
             <span className="text-3xl font-black text-white group-hover:text-purple-400 transition-colors">
-              {analytics?.weekly_volume?.toLocaleString() ?? 0}
+              {dashboardAnalytics?.weekly_volume?.toLocaleString() ?? 0}
             </span>
             <span className="text-[9px] font-bold text-purple-400 uppercase tracking-widest">kg lifted (7 days)</span>
           </div>
@@ -156,7 +146,7 @@ export default function AnalyticsDashboard() {
           <div className="flex flex-col gap-1.5">
             <span className="text-[9px] font-black text-v2-soft-gray uppercase tracking-widest">Body Weight</span>
             <span className="text-3xl font-black text-white group-hover:text-yellow-400 transition-colors">
-              {analytics?.weight > 0 ? `${analytics.weight} kg` : '--'}
+              {dashboardAnalytics?.weight > 0 ? `${dashboardAnalytics.weight} kg` : '--'}
             </span>
             <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-widest">Latest metric log</span>
           </div>
@@ -170,86 +160,9 @@ export default function AnalyticsDashboard() {
       {/* Main Grid: Chart + Side Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
         
-        {/* Left Column: Weekly Activity + Weight Charts */}
+        {/* Left Column: GitHub Style Calendar Heatmap */}
         <div className="lg:col-span-2 flex flex-col gap-8">
-          {/* Weekly Activity Line Chart */}
-          <div className="rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 backdrop-blur-xl shadow-2xl flex flex-col gap-6">
-            <div className="flex flex-col">
-              <h2 className="text-sm font-black uppercase tracking-widest text-white">Weekly Activity Frequency</h2>
-              <p className="text-[10px] text-v2-soft-gray uppercase tracking-widest font-bold mt-1">Sessions distribution by day</p>
-            </div>
-
-            <div className="w-full h-[320px]">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#00F5FF" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#00F5FF" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="day" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,255,0.3)', borderRadius: '12px', color: '#white' }}
-                      itemStyle={{ color: '#00F5FF', fontSize: 12, fontWeight: 'bold' }}
-                      labelStyle={{ color: '#94A3B8', fontSize: 10, textTransform: 'uppercase', fontWeight: 'bold' }}
-                    />
-                    <Area type="monotone" dataKey="value" stroke="#00F5FF" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" dot={{ r: 4, fill: '#070B14', strokeWidth: 2, stroke: '#00F5FF' }} activeDot={{ r: 6, fill: '#00F5FF' }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
-                  <Activity className="w-8 h-8 opacity-20" />
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Body Weight Progress Chart */}
-          <div className="rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 backdrop-blur-xl shadow-2xl flex flex-col gap-6">
-            <div className="flex flex-col">
-              <h2 className="text-sm font-black uppercase tracking-widest text-white">Body Weight Tracker</h2>
-              <p className="text-[10px] text-cyan-400 uppercase tracking-widest font-bold mt-1">
-                {analytics?.weight_chart && analytics.weight_chart.length > 0 
-                  ? 'Real telemetry logs' 
-                  : 'Demo mode • Log weight to track real progress'}
-              </p>
-            </div>
-
-            <div className="w-full h-[320px]">
-              {weightChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                  <LineChart data={weightChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                    <YAxis domain={['dataMin - 2', 'dataMax + 2']} tick={{ fill: '#94A3B8', fontSize: 10, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#070B14', borderColor: 'rgba(0,245,255,0.3)', borderRadius: '12px', color: '#white' }}
-                      itemStyle={{ color: '#00E5FF', fontSize: 12, fontWeight: 'bold' }}
-                      labelStyle={{ color: '#94A3B8', fontSize: 10, textTransform: 'uppercase', fontWeight: 'bold' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="weight"
-                      stroke="#00E5FF"
-                      strokeWidth={3}
-                      dot={{ r: 4, fill: '#070B14', strokeWidth: 2, stroke: '#00E5FF' }}
-                      activeDot={{ r: 6, fill: '#00E5FF' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
-                  <Scale className="w-8 h-8 opacity-20" />
-                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
-                </div>
-              )}
-            </div>
-          </div>
+          <WorkoutHeatmap />
         </div>
 
         {/* Side panel: Health Biometrics */}
@@ -262,16 +175,26 @@ export default function AnalyticsDashboard() {
               <Droplet className="w-6 h-6 animate-bounce" style={{ animationDuration: '3s' }} />
             </div>
             <div className="flex-1 flex flex-col gap-1">
-              <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Hydration Balance</span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Hydration Balance</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => handleUpdateHealth('hydration', -0.25)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#0EA5E9]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#0EA5E9]">
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => handleUpdateHealth('hydration', 0.25)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#0EA5E9]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#0EA5E9]">
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-white">{analytics?.hydration ?? 0} L</span>
-                <span className="text-[10px] text-v2-soft-gray font-bold">/ 3.5 L Target</span>
+                <span className="text-xl font-black text-white">{dashboardAnalytics?.hydration ?? 0} L</span>
+                <span className="text-[10px] text-v2-soft-gray font-bold">/ {dashboardAnalytics?.water_goal ?? 3.5} L Target</span>
               </div>
               {/* Progress bar */}
               <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
                 <div 
                   className="bg-[#0EA5E9] h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(14,165,233,0.5)]" 
-                  style={{ width: `${Math.min(Math.round(((analytics?.hydration ?? 0) / 3.5) * 100), 100)}%` }}
+                  style={{ width: `${Math.min(Math.round(((dashboardAnalytics?.hydration ?? 0) / (dashboardAnalytics?.water_goal ?? 3.5)) * 100), 100)}%` }}
                 />
               </div>
             </div>
@@ -284,16 +207,26 @@ export default function AnalyticsDashboard() {
               <Moon className="w-6 h-6 animate-pulse" />
             </div>
             <div className="flex-1 flex flex-col gap-1">
-              <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Circadian Sleep</span>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Circadian Sleep</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => handleUpdateHealth('sleep', -0.5)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#3B82F6]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#3B82F6]">
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => handleUpdateHealth('sleep', 0.5)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#3B82F6]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#3B82F6]">
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-white">{analytics?.sleep ?? 0} h</span>
-                <span className="text-[10px] text-v2-soft-gray font-bold">/ 8.0 h Recommended</span>
+                <span className="text-xl font-black text-white">{dashboardAnalytics?.sleep ?? 0} h</span>
+                <span className="text-[10px] text-v2-soft-gray font-bold">/ {dashboardAnalytics?.sleep_goal ?? 8.0} h Target</span>
               </div>
               {/* Progress bar */}
               <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
                 <div 
                   className="bg-[#3B82F6] h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
-                  style={{ width: `${Math.min(Math.round(((analytics?.sleep ?? 0) / 8.0) * 100), 100)}%` }}
+                  style={{ width: `${Math.min(Math.round(((dashboardAnalytics?.sleep ?? 0) / (dashboardAnalytics?.sleep_goal ?? 8.0)) * 100), 100)}%` }}
                 />
               </div>
             </div>
@@ -310,7 +243,7 @@ export default function AnalyticsDashboard() {
               <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Pulse & Cardio</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-black text-white">
-                  {analytics?.heart_rate > 0 ? `${analytics.heart_rate} BPM` : '--'}
+                  {dashboardAnalytics?.heart_rate > 0 ? `${dashboardAnalytics.heart_rate} BPM` : '--'}
                 </span>
                 <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -324,16 +257,6 @@ export default function AnalyticsDashboard() {
         </div>
 
       </div>
-
-      {/* Audit Log Footer */}
-      <div className="relative z-10 max-w-sm rounded-xl border border-white/5 bg-[#0F172A]/30 p-4 flex items-center gap-3 backdrop-blur-md">
-        <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-        <div>
-          <h4 className="text-[9px] font-black text-white uppercase tracking-widest">API Data Integration Valid</h4>
-          <p className="text-[8px] text-v2-soft-gray mt-0.5 font-bold uppercase tracking-widest">SQLite Database engine online • TLS 1.3 encryption active</p>
-        </div>
-      </div>
-
     </div>
   );
 }

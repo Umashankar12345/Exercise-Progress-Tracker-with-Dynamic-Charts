@@ -34,6 +34,7 @@ export default function LogWorkout() {
   const [exercise, setExercise] = useState('');
   const [sets, setSets]         = useState(defaultSets);
   const [notes, setNotes]       = useState('');
+  const [intensity, setIntensity] = useState(7);
   const [status, setStatus]     = useState(null);
   const [msg, setMsg]           = useState('');
   const [goals, setGoals]       = useState([]);
@@ -193,7 +194,7 @@ export default function LogWorkout() {
         name: exercise,
         started_at: new Date().toISOString(),
         ended_at:   new Date().toISOString(),
-        notes,
+        notes: `[Intensity: ${intensity}/10] ${notes}`,
         sets: sets.map(s => ({ 
           reps: s.type === 'cardio' ? 0 : Number(s.reps || 0), 
           weight: s.type === 'cardio' ? 0 : Number(s.weight || 0),
@@ -214,6 +215,7 @@ export default function LogWorkout() {
       setSets(defaultSets); 
       setExercise(''); 
       setNotes('');
+      setIntensity(7);
       setIsFocusActive(false);
       fetchHistory();
       setTimeout(() => { setStatus(null); setMsg(''); }, 6000);
@@ -389,50 +391,64 @@ export default function LogWorkout() {
                         {/* Reps or Distance */}
                         <div className="flex flex-col gap-1.5 w-full">
                           {isCardio ? (
-                            <input 
-                              type="number" 
-                              placeholder="0.0 km"
-                              value={s.distance}
-                              step="0.1"
-                              onChange={e => updateSet(s.id, 'distance', e.target.value)}
-                              className="bg-surface-bright border border-outline-variant rounded-lg py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:border-primary"
-                            />
+                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                              <button type="button" onClick={() => updateSet(s.id, 'distance', Math.max(0, parseFloat(s.distance || 0) - 0.5).toFixed(1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                              <input 
+                                type="number" 
+                                placeholder="0.0"
+                                value={s.distance}
+                                step="0.1"
+                                onChange={e => updateSet(s.id, 'distance', e.target.value)}
+                                className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#00E5FF] outline-none"
+                              />
+                              <button type="button" onClick={() => updateSet(s.id, 'distance', (parseFloat(s.distance || 0) + 0.5).toFixed(1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                            </div>
                           ) : (
-                            <input 
-                              type="number" 
-                              placeholder={ghostPlaceholder?.reps ? `${ghostPlaceholder.reps}` : "10"}
-                              value={s.reps}
-                              onChange={e => updateSet(s.id, 'reps', e.target.value)}
-                              className="bg-surface-bright border border-outline-variant rounded-lg py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:border-primary"
-                            />
+                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                              <button type="button" onClick={() => updateSet(s.id, 'reps', Math.max(0, parseInt(s.reps || 10) - 1))} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                              <input 
+                                type="number" 
+                                placeholder={ghostPlaceholder?.reps ? `${ghostPlaceholder.reps}` : "10"}
+                                value={s.reps}
+                                onChange={e => updateSet(s.id, 'reps', e.target.value)}
+                                className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#00E5FF] outline-none"
+                              />
+                              <button type="button" onClick={() => updateSet(s.id, 'reps', parseInt(s.reps || 10) + 1)} className="px-2.5 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                            </div>
                           )}
                         </div>
 
                         {/* Weight or Duration */}
                         <div className="flex flex-col gap-1.5 w-full relative">
                           {isCardio ? (
-                            <input 
-                              type="number" 
-                              placeholder="Secs"
-                              value={s.duration_seconds}
-                              onChange={e => updateSet(s.id, 'duration_seconds', e.target.value)}
-                              className="bg-surface-bright border border-outline-variant rounded-lg py-2 text-center text-sm font-bold text-on-surface focus:outline-none focus:border-primary"
-                            />
+                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors">
+                              <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', Math.max(0, parseInt(s.duration_seconds || 0) - 30))} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
+                              <input 
+                                type="number" 
+                                placeholder="Secs"
+                                value={s.duration_seconds}
+                                onChange={e => updateSet(s.id, 'duration_seconds', e.target.value)}
+                                className="w-full bg-transparent py-2 text-center text-sm font-bold text-[#7C3AED] outline-none"
+                              />
+                              <button type="button" onClick={() => updateSet(s.id, 'duration_seconds', parseInt(s.duration_seconds || 0) + 30)} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
+                            </div>
                           ) : (
-                            <div className="relative flex items-center">
+                            <div className="flex items-center bg-surface-bright border border-outline-variant rounded-lg overflow-hidden focus-within:border-primary transition-colors relative">
+                              <button type="button" onClick={() => updateSet(s.id, 'weight', Math.max(0, parseFloat(s.weight || 60) - 2.5))} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">-</button>
                               <input 
                                 type="number" 
                                 placeholder={ghostPlaceholder?.weight ? `${ghostPlaceholder.weight}` : "60"}
                                 value={s.weight}
                                 onChange={e => updateSet(s.id, 'weight', e.target.value)}
-                                className={`bg-surface-bright border border-outline-variant rounded-lg py-2 pl-2 pr-7 text-center text-sm font-bold focus:outline-none focus:border-primary w-full ${
-                                  s.weight > 100 ? 'text-tertiary' : 'text-on-surface'
+                                className={`w-full bg-transparent py-2 pr-6 text-center text-sm font-bold outline-none ${
+                                  s.weight > 100 ? 'text-tertiary' : 'text-[#00E5FF]'
                                 }`}
                               />
+                              <button type="button" onClick={() => updateSet(s.id, 'weight', parseFloat(s.weight || 60) + 2.5)} className="px-2 py-2 text-on-surface hover:bg-white/5 font-black">+</button>
                               <button
                                 type="button"
                                 onClick={() => setActiveCalculatorWeight(s.weight || 20)}
-                                className="absolute right-1.5 text-on-surface-variant hover:text-primary transition-colors p-1"
+                                className="absolute right-7 text-on-surface-variant hover:text-primary transition-colors p-1"
                                 title="Plate Calculator"
                               >
                                 <Calculator className="w-3.5 h-3.5" />
@@ -478,15 +494,35 @@ export default function LogWorkout() {
                 </div>
               </div>
 
-              {/* Notes */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Session Notes</label>
-                <textarea 
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="How did it feel? (e.g. Explosive reps, felt heavy today...)"
-                  className="w-full bg-surface-container border border-outline-variant rounded-xl p-4 text-sm text-on-surface font-medium focus:outline-none focus:border-primary transition-all min-h-[100px] resize-none"
-                />
+              {/* Intensity & Notes */}
+              <div className="space-y-6">
+                {/* Intensity Slider */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Session Intensity: {intensity}/10</label>
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${intensity <= 4 ? 'bg-emerald-500/20 text-emerald-400' : intensity <= 7 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {intensity <= 4 ? 'Light' : intensity <= 7 ? 'Moderate' : 'Brutal'}
+                    </span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="1" max="10" 
+                    value={intensity} 
+                    onChange={e => setIntensity(Number(e.target.value))}
+                    className="w-full h-2 bg-surface-bright rounded-lg appearance-none cursor-pointer"
+                    style={{ accentColor: intensity <= 4 ? '#34d399' : intensity <= 7 ? '#facc15' : '#f87171' }}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black uppercase tracking-widest text-on-surface-variant">Session Notes</label>
+                  <textarea 
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="How did it feel? (e.g. Explosive reps, felt heavy today...)"
+                    className="w-full bg-surface-container border border-outline-variant rounded-xl p-4 text-sm text-on-surface font-medium focus:outline-none focus:border-primary transition-all min-h-[100px] resize-none"
+                  />
+                </div>
               </div>
 
               {/* Submit Button */}

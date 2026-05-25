@@ -173,6 +173,8 @@ class DashboardController extends Controller
             'weekly_progress' => $weeklyProgress,
             'workout_chart'  => $workoutChart,
             'weight_chart'   => $weightLogs,
+            'water_goal'     => (float) ($user->water_goal ?? 3.5),
+            'sleep_goal'     => 8.0,
         ]);
     }
 }

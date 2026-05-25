@@ -1,29 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, ChevronUp, ChevronDown, Minus, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { Trophy, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import useStore from '../../store/useStore';
+import GlobalLoader from './../ui/GlobalLoader';
 
 export default function AICommunityRankings() {
-  const [rankings, setRankings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { arenaLeaderboard, fetchArenaLeaderboard } = useStore();
+  const [loading, setLoading] = useState(arenaLeaderboard.length === 0);
 
   useEffect(() => {
-    const fetchRankings = async () => {
-      const token = localStorage.getItem('auth_token');
-      try {
-        const { data } = await axios.get('http://172.21.133.28:8000/api/leaderboard', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        setRankings(data);
-      } catch (err) {
-        console.error('Error fetching rankings:', err);
-      } finally {
-        setLoading(false);
-      }
+    const initFetch = async () => {
+      if (arenaLeaderboard.length === 0) setLoading(true);
+      await fetchArenaLeaderboard();
+      setLoading(false);
     };
-    fetchRankings();
-  }, []);
+    initFetch();
+  }, [fetchArenaLeaderboard]);
 
   const getTrendIcon = (trend) => {
     if (trend === 'up') return <ChevronUp className="w-3 h-3 text-[#22C55E]" />;
@@ -42,12 +33,12 @@ export default function AICommunityRankings() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="w-5 h-5 text-[#FACC15] animate-spin" />
+        <div className="py-8">
+          <GlobalLoader text="Calculating Ranks..." />
         </div>
       ) : (
-        <div className="flex flex-col gap-1">
-          {rankings.map((r, i) => (
+        <div className="flex flex-col gap-2 mt-4 relative z-10">
+          {arenaLeaderboard.slice(0, 5).map((r, i) => (
             <div key={i} className={`flex items-center justify-between p-2 rounded-xl transition-colors cursor-pointer ${r.isUser ? 'bg-[#3B82F6]/10 border border-[#3B82F6]/30' : 'hover:bg-white/5 border border-transparent'}`}>
               <div className="flex items-center gap-3">
                 <span className={`text-xs font-black w-4 text-center ${r.rank <= 3 ? 'text-white' : 'text-v2-soft-gray'}`}>

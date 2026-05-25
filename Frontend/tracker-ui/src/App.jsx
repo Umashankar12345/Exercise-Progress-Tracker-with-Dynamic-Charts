@@ -7,7 +7,6 @@ import Dashboard from './pages/Dashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import LiveWorkoutMode from './components/dashboard/LiveWorkoutMode';
 import AIWorkoutSystem from './pages/AIWorkoutSystem';
-import AIWorkoutCalendar from './pages/AIWorkoutCalendar';
 import AISocialSystem from './pages/AISocialSystem';
 import LogWorkout from './pages/LogWorkout';
 import ExerciseLibrary from './pages/ExerciseLibrary';
@@ -46,7 +45,6 @@ function App() {
           {/* Legacy redirects */}
           <Route path="ai-chat" element={<Navigate to="/jarvis" replace />} />
           <Route path="insights" element={<Navigate to="/jarvis" replace />} />
-          <Route path="calendar" element={<AIWorkoutCalendar />} />
           <Route path="social" element={<AISocialSystem />} />
           <Route path="dashboard" element={<Navigate to="/" replace />} />
           <Route path="log"      element={<LogWorkout />} />

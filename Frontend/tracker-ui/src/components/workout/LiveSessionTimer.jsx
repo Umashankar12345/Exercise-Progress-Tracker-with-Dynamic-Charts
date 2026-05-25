@@ -3,7 +3,7 @@ import { Play, Pause, Square } from 'lucide-react';
 
 export default function LiveSessionTimer() {
   const [active, setActive] = useState(true);
-  const [time, setTime] = useState(3600); // 1 hour
+  const [time, setTime] = useState(0);
 
   useEffect(() => {
     let int;

@@ -12,12 +12,24 @@ class HealthMetricController extends Controller
     /**
      * Get height/weight history and latest calculated metrics.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $range = strtolower((string) $request->query('range', '30d'));
+        $days = match ($range) {
+            '7d' => 7,
+            '30d' => 30,
+            '60d' => 60,
+            '90d' => 90,
+            default => 30,
+        };
+
+        // Return the most recent range, sorted ascending for charting.
         $metrics = Auth::user()->healthMetrics()
-            ->orderBy('date', 'asc')
-            ->take(30)
-            ->get();
+            ->orderBy('date', 'desc')
+            ->take($days)
+            ->get()
+            ->sortBy('date')
+            ->values();
 
         return response()->json([
             'history' => $metrics,

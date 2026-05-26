@@ -25,20 +25,22 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
 
   const fetchAnalytics = () => {
     api.get('/dashboard/analytics').then(res => {
-      const sleep = parseFloat(res.data.sleep) || 0;
-      const water = parseFloat(res.data.hydration) || 0;
       setStats({
-        totalCalories: parseFloat(res.data.total_calories) || 0,
-        water,
-        totalWorkouts: parseInt(res.data.total_workouts) || 0,
-        steps: parseInt(res.data.steps) || 0,
-        streak: parseInt(res.data.streak) || 0,
-        sleep,
-        steps_goal: parseInt(res.data.steps_goal) || 10000
+        totalCalories: res.data.total_calories || 0,
+        water: res.data.hydration || 0, // Today's precise daily hydration
+        totalWorkouts: res.data.total_workouts || 0,
+        steps: res.data.steps || 0,
+        streak: res.data.streak || 0,
+        sleep: res.data.sleep || 0, // Today's precise sleep hours
+        steps_goal: res.data.steps_goal || 10000
       });
-      setSleepHours(sleep > 0 ? sleep.toString() : '');
-      if (res.data.steps) setStepCount(parseInt(res.data.steps));
-      if (res.data.steps_goal) setStepsGoalInput(parseInt(res.data.steps_goal));
+      setSleepHours(res.data.sleep ? res.data.sleep.toString() : '');
+      if (res.data.steps) {
+        setStepCount(res.data.steps);
+      }
+      if (res.data.steps_goal) {
+        setStepsGoalInput(res.data.steps_goal);
+      }
     }).catch(e => console.error("Error loading dashboard analytics", e));
   };
 
@@ -48,6 +50,11 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
     api.get('/user/dna').then(res => {
       setDnaClass(res.data.class);
     }).catch(() => {});
+
+    window.addEventListener('health-data-updated', fetchAnalytics);
+    return () => {
+      window.removeEventListener('health-data-updated', fetchAnalytics);
+    };
   }, []);
 
   const handleLogSleep = async () => {
@@ -62,7 +69,7 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
       });
       setStats(prev => ({ ...prev, sleep: Number(sleepHours) }));
       window.dispatchEvent(new Event('health-data-updated'));
-      toast.success(`Sleep logged: ${sleepHours}h!`);
+      toast.success(`Circadian Sleep logged: ${sleepHours}h!`);
     } catch (err) {
       console.error("Error logging sleep metrics", err);
       toast.error('Failed to log sleep.');
@@ -77,12 +84,12 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
     }
     try {
       const addedLiters = Number(mlToLog) / 1000;
-      const newTotal = parseFloat(((stats.water || 0) + addedLiters).toFixed(2));
+      const newTotalLiters = stats.water + addedLiters;
       await api.post('/body-metrics', {
         date: new Date().toISOString().split('T')[0],
-        water_intake: newTotal
+        water_intake: Number(newTotalLiters.toFixed(2))
       });
-      setStats(prev => ({ ...prev, water: newTotal }));
+      setStats(prev => ({ ...prev, water: Number(newTotalLiters.toFixed(2)) }));
       window.dispatchEvent(new Event('health-data-updated'));
       toast.success(`Hydration logged: +${mlToLog}ml!`);
     } catch (err) {
@@ -153,12 +160,8 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
             transition={{ delay: 0.2 }}
             className="text-gray-400 text-lg max-w-lg mb-8 leading-relaxed"
           >
-            {stats.sleep > 0 && stats.water > 0
-              ? `Sleep: ${stats.sleep}h · Hydration: ${stats.water.toFixed(1)}L today. You are primed for a heavy push session. Let's crush those goals.`
-              : stats.sleep > 0
-              ? `Sleep: ${stats.sleep}h logged. Log your hydration below to complete today's health data.`
-              : stats.water > 0
-              ? `Hydration: ${stats.water.toFixed(1)}L logged. Log your sleep below to complete today's health data.`
+            {stats.sleep > 0 
+              ? `Your average sleep is ${stats.sleep}h. You are primed for a heavy push session today. Let's crush those goals.`
               : `Your sleep and hydration data isn't tracked yet. Log your health below.`}
           </motion.p>
  
@@ -214,18 +217,19 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
             {/* Orbiting Stats */}
             <div className="absolute -left-12 top-10 px-4 py-2 rounded-xl bg-[#0F172A]/80 backdrop-blur-md border border-[#00E5FF]/30 flex flex-col items-center">
                <Zap className="w-4 h-4 text-[#00E5FF] mb-1" />
-               <span className="text-xl font-black text-white">{stats.totalCalories > 0 ? stats.totalCalories.toLocaleString() : '--'}</span>
+               <span className="text-xl font-black text-white">{stats.totalCalories.toLocaleString()}</span>
                <span className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Kcal Burned</span>
             </div>
             <div className="absolute -right-8 bottom-10 px-4 py-2 rounded-xl bg-[#0F172A]/80 backdrop-blur-md border border-[#00F5A0]/30 flex flex-col items-center">
                <Droplet className="w-4 h-4 text-[#00F5A0] mb-1" />
-               <span className="text-xl font-black text-white">{stats.water > 0 ? `${stats.water.toFixed(1)}L` : '--'}</span>
+               <span className="text-xl font-black text-white">{stats.water > 0 ? `${stats.water}L` : '--'}</span>
                <span className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">Hydration</span>
             </div>
           </motion.div>
 
         </div>
       </div>
+
       {/* Health Logging Modal Overlay */}
       <AnimatePresence>
         {isHealthLogOpen && (
@@ -234,117 +238,233 @@ export default function HeroSection({ onStartWorkout, activeSession }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
-            onClick={() => setIsHealthLogOpen(false)}
           >
             <motion.div 
               initial={{ y: 50, scale: 0.95 }}
               animate={{ y: 0, scale: 1 }}
               exit={{ y: 50, scale: 0.95 }}
-              className="w-full max-w-sm bg-[#0A0F24] border border-[#00E5FF]/30 rounded-3xl overflow-hidden shadow-[0_0_80px_rgba(0,229,255,0.15)] flex flex-col relative"
-              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-[#0A0F24] border border-[#00E5FF]/30 rounded-3xl overflow-hidden shadow-[0_0_80px_rgba(0,229,255,0.15)] flex flex-col relative"
             >
               {/* Top border glowing highlight */}
               <div className="absolute top-0 inset-x-0 h-[1.5px] bg-gradient-to-r from-transparent via-[#00E5FF] to-transparent pointer-events-none" />
 
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-gradient-to-r from-[#00E5FF]/10 to-transparent shrink-0">
+              <div className="flex items-center justify-between p-6 border-b border-white/5 bg-gradient-to-r from-[#00E5FF]/10 to-transparent">
                 <h3 className="text-white font-black uppercase tracking-widest text-xs flex items-center gap-2">
-                  <Droplet className="w-4 h-4 text-[#00E5FF]" /> Log Health
+                  <Droplet className="w-4 h-4 text-[#00E5FF]" /> FitTrack Core Diagnostics
                 </h3>
-                <button onClick={() => setIsHealthLogOpen(false)} className="p-1.5 rounded-xl bg-white/5 hover:bg-red-500/20 hover:border-red-500/40 border border-white/10 text-slate-400 hover:text-red-400 transition-all cursor-pointer">
-                  <X className="w-4 h-4" />
+                <button onClick={() => setIsHealthLogOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Scrollable Content */}
-              <div className="p-4 space-y-4 overflow-y-auto" style={{ maxHeight: 'min(70vh, 520px)' }}>
+              <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto scrollbar-thin">
                 
-                {/* HYDRATION */}
-                <div className="space-y-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                {/* PART A: HYDRATION LOGGING NODE (Additive) */}
+                <div className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#00E5FF] opacity-5 blur-[40px] rounded-full pointer-events-none" />
+                  
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] uppercase tracking-widest text-[#00E5FF] font-black flex items-center gap-1.5">
-                      <Droplet className="w-3 h-3" /> Hydration
+                      <Droplet className="w-3.5 h-3.5 fill-[#00E5FF]/20" /> 1. Hydration Intake
                     </label>
-                    <span className="text-[10px] text-slate-400 font-bold">
-                      Today: <span className="text-white font-black">{stats.water > 0 ? stats.water.toFixed(1) : '0.0'}L</span> / {user?.water_goal || 3.5}L
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">
+                      Today: <span className="text-white font-black">{stats.water.toFixed(2)}L</span> / {user?.water_goal || 3.5}L
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[250, 500, 750].map((ml) => (
-                      <button key={ml} type="button" onClick={() => handleAddWater(ml)}
-                        className="py-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#00E5FF]/40 text-xs font-black text-white hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] transition-all flex items-center justify-center gap-1 cursor-pointer">
-                        <Plus className="w-3 h-3" /> {ml}ml
-                      </button>
-                    ))}
+
+                  {/* Circular Quick Log Buttons */}
+                  <div className="space-y-2">
+                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold block">Quick Log Amounts</span>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[250, 500, 750].map((ml) => (
+                        <button
+                          key={ml}
+                          type="button"
+                          onClick={() => handleAddWater(ml)}
+                          className="py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#00E5FF]/40 text-xs font-black text-white hover:bg-[#00E5FF]/10 hover:text-[#00E5FF] transition-all flex items-center justify-center gap-1 group/btn cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3 text-[#00E5FF]" /> {ml} ml
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase">
-                    <span>Custom</span><span className="text-[#00E5FF]">{waterMl}ml</span>
+
+                  {/* Slider Input */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Custom Amount</span>
+                      <span className="text-xs font-black text-[#00E5FF] font-mono">{waterMl} ml ({(waterMl / 1000).toFixed(2)}L)</span>
+                    </div>
+                    <input 
+                      type="range" 
+                      min="100" 
+                      max="1000" 
+                      step="50"
+                      value={waterMl}
+                      onChange={(e) => setWaterMl(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]"
+                    />
                   </div>
-                  <input type="range" min="100" max="1000" step="50" value={waterMl}
-                    onChange={(e) => setWaterMl(parseInt(e.target.value))}
-                    className="w-full h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#00E5FF]" />
-                  <button type="button" onClick={() => handleAddWater(waterMl)}
-                    className="w-full py-2.5 rounded-xl bg-[#00E5FF] hover:bg-[#00B3CC] text-black font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                    <Plus className="w-3.5 h-3.5 stroke-[3]" /> Drink {waterMl}ml
+
+                  <button 
+                    type="button"
+                    onClick={() => handleAddWater(waterMl)}
+                    className="w-full py-3.5 rounded-xl bg-[#00E5FF] hover:bg-[#00B3CC] text-black font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(0,229,255,0.2)] hover:shadow-[0_0_25px_rgba(0,229,255,0.35)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" /> Drink {waterMl} ml
                   </button>
                 </div>
 
-                {/* SLEEP */}
-                <div className="space-y-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                {/* PART B: CIRCADIAN SLEEP NODE (Once a Day) */}
+                <div className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 relative overflow-hidden group">
+                  <div className="absolute bottom-0 right-0 w-24 h-24 bg-[#7C3AED] opacity-5 blur-[40px] rounded-full pointer-events-none" />
+                  
                   <div className="flex items-center justify-between">
                     <label className="text-[10px] uppercase tracking-widest text-[#7C3AED] font-black flex items-center gap-1.5">
-                      <Moon className="w-3 h-3" /> Sleep
+                      <Moon className="w-3.5 h-3.5 fill-[#7C3AED]/20 text-[#7C3AED]" /> 2. Circadian Sleep
                     </label>
-                    <span className="text-[10px] text-slate-400 font-bold">
-                      Logged: <span className="text-white font-black">{stats.sleep > 0 ? `${stats.sleep}h` : 'None'}</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">
+                      Current: <span className="text-white font-black">{stats.sleep > 0 ? `${stats.sleep}h` : 'None'}</span>
                     </span>
                   </div>
-                  <div className="flex gap-3 items-center">
-                    <input type="range" min="2" max="14" step="0.5" value={sleepHours || '7.0'}
-                      onChange={(e) => setSleepHours(e.target.value)}
-                      className="flex-1 h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#7C3AED]" />
-                    <input type="number" step="0.1" min="0" max="24" value={sleepHours}
-                      onChange={(e) => setSleepHours(e.target.value)} placeholder="7.5"
-                      className="w-16 bg-black/40 border border-white/10 rounded-xl py-2 px-2 text-white text-xs font-mono text-center focus:outline-none focus:border-[#7C3AED]" />
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Total Sleep Duration</span>
+                      <span className="text-xs font-black text-[#7C3AED] font-mono">{sleepHours || '0.0'} Hours</span>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      <input 
+                        type="range" 
+                        min="2" 
+                        max="14" 
+                        step="0.5"
+                        value={sleepHours || '7.0'}
+                        onChange={(e) => setSleepHours(e.target.value)}
+                        className="flex-1 h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#7C3AED]"
+                      />
+                      <input 
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="24"
+                        value={sleepHours}
+                        onChange={(e) => setSleepHours(e.target.value)}
+                        placeholder="e.g. 7.5"
+                        className="w-16 bg-black/40 border border-white/10 rounded-xl py-2 px-3 text-white text-xs font-mono text-center focus:outline-none focus:border-[#7C3AED]"
+                      />
+                    </div>
                   </div>
-                  <button type="button" onClick={handleLogSleep}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] text-white font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                    Save Sleep
+
+                  <button 
+                    type="button"
+                    onClick={handleLogSleep}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] hover:from-[#6D28D9] hover:to-[#4338CA] text-white font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(124,58,237,0.2)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  >
+                    Save Sleep Log
                   </button>
                 </div>
 
-                {/* STEPS */}
-                <div className="space-y-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                {/* PART C: STEPS & CALORIES TRACKING (Daily Activity) */}
+                <div className="space-y-4 p-5 rounded-2xl bg-white/[0.02] border border-white/5 relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-[#10B981] opacity-5 blur-[40px] rounded-full pointer-events-none" />
+                  
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-widest text-[#10B981] font-black flex items-center gap-1.5">
-                      <Footprints className="w-3 h-3" /> Steps
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-bold">
-                      Today: <span className="text-white font-black">{(stats.steps || 0).toLocaleString()}</span>
+                    <label className="text-[10px] uppercase tracking-widest text-[#10B981] font-black flex items-center gap-1.5">
+                      <Footprints className="w-3.5 h-3.5 text-[#10B981]" /> 3. Steps & Calories
+                    </label>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">
+                      Today: <span className="text-white font-black">{stats.steps.toLocaleString()}</span> / {(stats.steps_goal || 10000).toLocaleString()}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[2500, 5000, 10000].map((steps) => (
-                      <button key={steps} type="button" onClick={() => handleLogSteps(steps)}
-                        className="py-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#10B981]/40 text-xs font-black text-white hover:bg-[#10B981]/10 hover:text-[#10B981] transition-all flex items-center justify-center gap-1 cursor-pointer">
-                        <Plus className="w-3 h-3" /> {(steps/1000).toFixed(1)}k
+
+                  {/* Circular Quick Log Buttons */}
+                  <div className="space-y-2">
+                    <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold block">Quick Log Steps</span>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[2500, 5000, 10000].map((steps) => (
+                        <button
+                          key={steps}
+                          type="button"
+                          onClick={() => handleLogSteps(steps)}
+                          className="py-2.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#10B981]/40 text-xs font-black text-white hover:bg-[#10B981]/10 hover:text-[#10B981] transition-all flex items-center justify-center gap-1 group/btn cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3 text-[#10B981]" /> +{steps.toLocaleString()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Slider Input */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Custom Steps</span>
+                      <span className="text-xs font-black text-[#10B981] font-mono">{stepCount.toLocaleString()} steps</span>
+                    </div>
+                    <div className="flex gap-4 items-center">
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="25000" 
+                        step="500"
+                        value={stepCount}
+                        onChange={(e) => setStepCount(parseInt(e.target.value))}
+                        className="flex-1 h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#10B981]"
+                      />
+                      <input 
+                        type="number"
+                        min="0"
+                        max="100000"
+                        value={stepCount}
+                        onChange={(e) => setStepCount(parseInt(e.target.value) || 0)}
+                        placeholder="10000"
+                        className="w-24 bg-black/40 border border-white/10 rounded-xl py-2 px-3 text-white text-xs font-mono text-center focus:outline-none focus:border-[#10B981]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Calorie burn estimate preview */}
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-[#10B981]/5 border border-[#10B981]/15 text-[11px]">
+                    <span className="text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                      <Flame className="w-3.5 h-3.5 text-[#EF4444]" /> Est. Calories Burned
+                    </span>
+                    <span className="text-[#10B981] font-black font-mono">{(stepCount * 0.04).toFixed(0)} kcal</span>
+                  </div>
+
+                  {/* Set Steps Goal Section */}
+                  <div className="space-y-2 pt-3 border-t border-white/5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold flex items-center gap-1">
+                        🎯 Set Daily Steps Goal
+                      </span>
+                      <span className="text-xs font-black text-[#10B981] font-mono">{stepsGoalInput.toLocaleString()} steps</span>
+                    </div>
+                    <div className="flex gap-3 items-center">
+                      <input 
+                        type="range" 
+                        min="2000" 
+                        max="30000" 
+                        step="1000"
+                        value={stepsGoalInput}
+                        onChange={(e) => setStepsGoalInput(parseInt(e.target.value))}
+                        className="flex-1 h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#10B981]"
+                      />
+                      <button 
+                        type="button"
+                        onClick={handleUpdateStepsGoal}
+                        className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:border-[#10B981]/40 hover:bg-[#10B981]/10 text-white font-black text-[9px] uppercase tracking-widest transition-all cursor-pointer"
+                      >
+                        Set Goal
                       </button>
-                    ))}
+                    </div>
                   </div>
-                  <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase">
-                    <span>Custom</span><span className="text-[#10B981]">{stepCount.toLocaleString()} steps</span>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <input type="range" min="0" max="25000" step="500" value={stepCount}
-                      onChange={(e) => setStepCount(parseInt(e.target.value))}
-                      className="flex-1 h-1.5 bg-black/40 rounded-lg appearance-none cursor-pointer accent-[#10B981]" />
-                    <input type="number" min="0" max="100000" value={stepCount}
-                      onChange={(e) => setStepCount(parseInt(e.target.value) || 0)}
-                      className="w-20 bg-black/40 border border-white/10 rounded-xl py-2 px-2 text-white text-xs font-mono text-center focus:outline-none focus:border-[#10B981]" />
-                  </div>
-                  <button type="button" onClick={() => handleLogSteps(stepCount)}
-                    className="w-full py-2.5 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                    Save Steps
+
+                  <button 
+                    type="button"
+                    onClick={() => handleLogSteps(stepCount)}
+                    className="w-full py-3.5 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer mt-2"
+                  >
+                    Save Steps Log
                   </button>
                 </div>
 

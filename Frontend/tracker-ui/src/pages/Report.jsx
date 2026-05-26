@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Download,
   FileBarChart,
@@ -50,61 +51,42 @@ const avg = (values) => {
 };
 
 export default function Report() {
-  const [progressSummary, setProgressSummary] = useState(null);
-  const [monthlySummary, setMonthlySummary] = useState(null);
-  const [prs, setPrs] = useState([]);
-  const [workoutHeatmap, setWorkoutHeatmap] = useState([]);
-  const [healthHistory, setHealthHistory] = useState([]);
-  const [healthLatest, setHealthLatest] = useState(null);
-  const [goals, setGoals] = useState([]);
-  const [dailySteps, setDailySteps] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const [exportProgress, setExportProgress] = useState(0);
   const [exportPhase, setExportPhase] = useState('idle');
 
   const isExporting = exportPhase !== 'idle';
 
-  useEffect(() => {
-    let isMounted = true;
+  const { data: reportData, isLoading: loading } = useQuery({
+    queryKey: ['monthlyReportData'],
+    queryFn: async () => {
+      const [progressRes, monthlyRes, prsRes, heatmapRes, healthRes, stepsRes] = await Promise.all([
+        api.get('/progress/summary'),
+        api.get('/reports/monthly/summary'),
+        api.get('/prs'),
+        api.get('/workouts/heatmap'),
+        api.get('/body-metrics?range=90d'),
+        api.get('/daily-steps?range=90d').catch(() => ({ data: [] })),
+      ]);
+      return {
+        progressSummary: progressRes.data,
+        monthlySummary: monthlyRes.data,
+        prs: Array.isArray(prsRes.data) ? prsRes.data : [],
+        workoutHeatmap: Array.isArray(heatmapRes.data) ? heatmapRes.data : [],
+        healthHistory: Array.isArray(healthRes.data?.history) ? healthRes.data.history : [],
+        healthLatest: healthRes.data?.latest ?? null,
+        dailySteps: Array.isArray(stepsRes.data) ? stepsRes.data : []
+      };
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+  });
 
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-        const [progressRes, monthlyRes, prsRes, heatmapRes, healthRes, goalsRes, stepsRes] = await Promise.all([
-          api.get('/progress/summary'),
-          api.get('/reports/monthly/summary'),
-          api.get('/prs'),
-          api.get('/workouts/heatmap'),
-          api.get('/body-metrics?range=90d'),
-          api.get('/goals'),
-          api.get('/daily-steps?range=90d').catch(() => ({ data: [] })),
-        ]);
-
-        if (!isMounted) return;
-
-        setProgressSummary(progressRes.data);
-        setMonthlySummary(monthlyRes.data);
-        setPrs(Array.isArray(prsRes.data) ? prsRes.data : []);
-        setWorkoutHeatmap(Array.isArray(heatmapRes.data) ? heatmapRes.data : []);
-        setHealthHistory(Array.isArray(healthRes.data?.history) ? healthRes.data.history : []);
-        setHealthLatest(healthRes.data?.latest ?? null);
-        setGoals(Array.isArray(goalsRes.data?.data) ? goalsRes.data.data : []);
-        setDailySteps(Array.isArray(stepsRes.data) ? stepsRes.data : []);
-      } catch (err) {
-        console.error('Failed to load report data:', err);
-        toast.error('Failed to load monthly report.');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchAll();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const progressSummary = reportData?.progressSummary;
+  const monthlySummary = reportData?.monthlySummary;
+  const prs = reportData?.prs || [];
+  const workoutHeatmap = reportData?.workoutHeatmap || [];
+  const healthHistory = reportData?.healthHistory || [];
+  const healthLatest = reportData?.healthLatest || null;
+  const dailySteps = reportData?.dailySteps || [];
 
   const period = useMemo(() => {
     const start = parseLocalDate(monthlySummary?.period?.start) ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -154,7 +136,6 @@ export default function Report() {
         date: String(h.date).slice(0, 10),
         water: h.water_intake === null || h.water_intake === undefined ? null : safeNumber(h.water_intake),
         sleep: h.sleep_hours === null || h.sleep_hours === undefined ? null : safeNumber(h.sleep_hours),
-        stress: h.stress_level === null || h.stress_level === undefined ? null : safeNumber(h.stress_level),
         steps: h.steps === null || h.steps === undefined ? null : safeNumber(h.steps),
       }))
       .sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
@@ -184,22 +165,11 @@ export default function Report() {
     }));
   }, [monthHealth, monthSteps]);
 
-  const stressAvg = useMemo(() => {
-    return avg(monthHealth.map((h) => h.stress).filter((v) => v !== null));
-  }, [monthHealth]);
-
   const workoutsTotal = safeNumber(monthlySummary?.workouts?.count);
   const volumeTotal = safeNumber(monthlySummary?.workouts?.total_volume);
   const caloriesTotal = safeNumber(monthlySummary?.workouts?.total_calories);
   const avgDuration = safeNumber(monthlySummary?.workouts?.avg_duration_min);
   const prsThisMonth = safeNumber(monthlySummary?.prs?.count);
-
-  const activeGoals = useMemo(() => {
-    return (goals || [])
-      .slice()
-      .sort((a, b) => safeNumber(b.pct) - safeNumber(a.pct))
-      .slice(0, 6);
-  }, [goals]);
 
   const topPrs = useMemo(() => {
     return (prs || [])
@@ -442,14 +412,6 @@ export default function Report() {
 
             <div className="rounded-xl bg-black/30 border border-white/5 p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-amber-300" />
-                <span className="text-xs font-bold text-slate-200">Stress</span>
-              </div>
-              <span className="text-xs font-black text-white">{stressAvg === null ? 'N/A' : `${stressAvg.toFixed(0)}%`}</span>
-            </div>
-
-            <div className="rounded-xl bg-black/30 border border-white/5 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-emerald-300" />
                 <span className="text-xs font-bold text-slate-200">PRs</span>
               </div>
@@ -499,30 +461,6 @@ export default function Report() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-2xl border border-white/5 bg-[#0F172A]/50 p-6">
-            <div className="text-xs font-black uppercase tracking-widest text-white mb-4">Goals</div>
-            {activeGoals.length > 0 ? (
-              <div className="space-y-3">
-                {activeGoals.map((g) => (
-                  <div key={g.goal_id} className="rounded-xl bg-black/30 border border-white/5 p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="text-sm font-bold text-white truncate">{g.exercise_name}</div>
-                        <div className="text-[11px] font-semibold text-slate-400">{`${safeNumber(g.current_kg).toFixed(1)} / ${safeNumber(g.target_kg).toFixed(1)} kg`}</div>
-                      </div>
-                      <div className="text-xs font-black text-white shrink-0">{`${safeNumber(g.pct).toFixed(1)}%`}</div>
-                    </div>
-                    <div className="mt-3 h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400" style={{ width: `${Math.min(100, Math.max(0, safeNumber(g.pct)))}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm font-semibold text-slate-400">No active goals yet.</div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-white/5 bg-[#0F172A]/50 p-6">
             <div className="text-xs font-black uppercase tracking-widest text-white mb-4">Top Exercises (Month)</div>
             {Array.isArray(monthlySummary?.top_exercises) && monthlySummary.top_exercises.length > 0 ? (
               <div className="space-y-3">
@@ -537,28 +475,28 @@ export default function Report() {
               <div className="text-sm font-semibold text-slate-400">No workouts recorded this month.</div>
             )}
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-white/5 bg-[#0F172A]/50 p-6">
-          <div className="text-xs font-black uppercase tracking-widest text-white mb-4">Top PRs (All Time)</div>
-          {topPrs.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {topPrs.map((p) => (
-                <div key={p.exercise} className="rounded-xl bg-black/30 border border-white/5 p-4 flex items-center justify-between">
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold text-white truncate">{p.exercise}</div>
-                    <div className="text-[11px] font-semibold text-slate-400">{p.date ? new Date(p.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date N/A'}</div>
+          <div className="rounded-2xl border border-white/5 bg-[#0F172A]/50 p-6">
+            <div className="text-xs font-black uppercase tracking-widest text-white mb-4">Top PRs (All Time)</div>
+            {topPrs.length > 0 ? (
+              <div className="space-y-3">
+                {topPrs.map((p) => (
+                  <div key={p.exercise} className="rounded-xl bg-black/30 border border-white/5 p-4 flex items-center justify-between">
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-white truncate">{p.exercise}</div>
+                      <div className="text-[11px] font-semibold text-slate-400">{p.date ? new Date(p.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Date N/A'}</div>
+                    </div>
+                    <div className="text-xs font-black text-emerald-300">{safeNumber(p.weight).toFixed(1)} kg</div>
                   </div>
-                  <div className="text-xs font-black text-emerald-300">{safeNumber(p.weight).toFixed(1)} kg</div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm font-semibold text-slate-400">No PR data yet.</div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm font-semibold text-slate-400">No PR data yet.</div>
+            )}
+          </div>
         </div>
 
-        <div className="text-[11px] text-slate-500 font-semibold flex flex-wrap gap-4 justify-between">
+        <div className="text-[11px] text-slate-500 font-semibold flex flex-wrap gap-4 justify-between mt-4">
           <span>{`Streak: ${safeNumber(progressSummary?.streak)} day(s)`}</span>
           <span>{`Latest weight: ${healthLatest?.weight ? `${safeNumber(healthLatest.weight).toFixed(1)} kg` : 'N/A'}`}</span>
           <span>{`Latest BMI: ${healthLatest?.bmi ? safeNumber(healthLatest.bmi).toFixed(1) : 'N/A'}`}</span>

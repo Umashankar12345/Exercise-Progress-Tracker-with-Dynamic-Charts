@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, ChevronUp, ChevronDown, Minus } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import useStore from '../../store/useStore';
 import GlobalLoader from './../ui/GlobalLoader';
 
@@ -16,11 +16,7 @@ export default function AICommunityRankings() {
     initFetch();
   }, [fetchArenaLeaderboard]);
 
-  const getTrendIcon = (trend) => {
-    if (trend === 'up') return <ChevronUp className="w-3 h-3 text-[#22C55E]" />;
-    if (trend === 'down') return <ChevronDown className="w-3 h-3 text-[#EF4444]" />;
-    return <Minus className="w-3 h-3 text-v2-soft-gray" />;
-  };
+
 
   return (
     <div className="w-full rounded-2xl border border-white/5 bg-[#0F172A]/65 backdrop-blur-xl p-5">
@@ -50,7 +46,6 @@ export default function AICommunityRankings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-mono text-white">{r.score}</span>
-                {getTrendIcon(r.trend)}
               </div>
             </div>
           ))}

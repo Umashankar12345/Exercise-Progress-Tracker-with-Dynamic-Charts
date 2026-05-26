@@ -85,7 +85,7 @@ export default function WaterIntakeHistoryChart() {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
+          <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 border border-white/5 rounded-2xl bg-white/[0.02]">
             <Droplet className="w-8 h-8 opacity-20" />
             <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
           </div>

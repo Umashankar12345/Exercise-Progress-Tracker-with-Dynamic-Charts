@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, Calendar, TrendingUp, Sparkles, Award } from 'lucide-react';
 import useStore from '../../store/useStore';
@@ -33,6 +34,7 @@ export default function WorkoutHeatmap() {
   const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [streak, setStreak] = useState(0);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [hoveredCell, setHoveredCell] = useState(null);
 
   const initData = useCallback(async () => {
     if (!dashboardHeatmap) setLoading(true);
@@ -263,7 +265,7 @@ export default function WorkoutHeatmap() {
   };
 
   return (
-    <div className="w-full rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 relative overflow-hidden backdrop-blur-xl group">
+    <div className="w-full rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 relative backdrop-blur-xl group overflow-visible">
       <div className="absolute top-0 right-0 w-64 h-64 bg-[#00E5FF] opacity-5 blur-[100px] rounded-full pointer-events-none" />
 
       {/* Header Info */}
@@ -307,7 +309,7 @@ export default function WorkoutHeatmap() {
       </div>
 
       {/* Month Labels & Heatmap Grid */}
-      <div className="w-full overflow-x-auto pb-4 custom-scrollbar">
+      <div className="w-full overflow-x-auto pb-6 pt-32 -mt-32 custom-scrollbar">
         {/* Month Labels */}
         <div className="flex gap-1.5 min-w-max mb-1 select-none">
           {monthHeaders.map((m, idx) => (
@@ -325,33 +327,22 @@ export default function WorkoutHeatmap() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: weekIndex * 0.003, duration: 0.4 }}
-              className="flex flex-col gap-1.5"
+              className="flex flex-col gap-1.5 relative"
+              whileHover={{ zIndex: 50 }}
             >
               {week.map((day, dayIndex) => (
                 <motion.div
                   key={dayIndex}
-                  whileHover={{ scale: 1.6, zIndex: 10 }}
+                  whileHover={{ scale: 1.8, zIndex: 100 }}
                   onClick={() => setSelectedDay(day)}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setHoveredCell({ day, rect });
+                  }}
+                  onMouseLeave={() => setHoveredCell(null)}
                   className={`w-3.5 h-3.5 rounded-[2px] border cursor-pointer transition-all duration-300 relative group/cell ${getColor(day.intensity)}`}
                   style={getGlow(day.intensity)}
                 >
-                  {/* Rich Hover Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 pointer-events-none opacity-0 group-hover/cell:opacity-100 transition-opacity z-50">
-                    <div className="px-3 py-2 rounded-xl bg-black/95 border border-white/10 text-white text-[10px] font-bold whitespace-nowrap shadow-xl backdrop-blur-md">
-                      <div className="text-white/50 mb-0.5">{day.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                      {day.intensity > 0 ? (
-                        <>
-                          <div className="text-[#39d353] font-black">{INTENSITY_LABELS[day.intensity]} Level</div>
-                          <div className="text-white/70">{day.count} workout{day.count !== 1 ? 's' : ''}</div>
-                          {day.calories > 0 && <div className="text-[#39d353]">{Math.round(day.calories)} kcal</div>}
-                          <div className="text-white/40 text-[8px] mt-1 italic">Click for analytics drill-down</div>
-                        </>
-                      ) : (
-                        <div className="text-white/30">Rest Day (Click to view details)</div>
-                      )}
-                    </div>
-                    <div className="w-2 h-2 bg-black/95 border-b border-r border-white/10 rotate-45 mx-auto -mt-1" />
-                  </div>
                 </motion.div>
               ))}
             </motion.div>
@@ -529,6 +520,44 @@ export default function WorkoutHeatmap() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Global Fixed Tooltip to completely escape all clipping boundaries */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {hoveredCell && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'fixed',
+                top: hoveredCell.rect.top - 8,
+                left: hoveredCell.rect.left + hoveredCell.rect.width / 2,
+                transform: 'translate(-50%, -100%)',
+                zIndex: 999999
+              }}
+              className="pointer-events-none"
+            >
+              <div className="px-3 py-2 rounded-xl bg-[#070B14]/95 border border-white/20 text-white text-[10px] font-bold whitespace-nowrap shadow-2xl backdrop-blur-md">
+                <div className="text-white/50 mb-0.5">{hoveredCell.day.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+                {hoveredCell.day.intensity > 0 ? (
+                  <>
+                    <div className="text-[#39d353] font-black">{INTENSITY_LABELS[hoveredCell.day.intensity]} Level</div>
+                    <div className="text-white/90">{hoveredCell.day.count} workout{hoveredCell.day.count !== 1 ? 's' : ''}</div>
+                    {hoveredCell.day.calories > 0 && <div className="text-[#39d353]">{Math.round(hoveredCell.day.calories)} kcal</div>}
+                    <div className="text-white/40 text-[8px] mt-1 italic">Click for analytics drill-down</div>
+                  </>
+                ) : (
+                  <div className="text-white/40">Rest Day (Click to view details)</div>
+                )}
+              </div>
+              <div className="w-2 h-2 bg-[#070B14]/95 border-b border-r border-white/20 rotate-45 mx-auto -mt-1" />
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

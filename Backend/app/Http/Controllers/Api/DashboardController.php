@@ -103,7 +103,8 @@ class DashboardController extends Controller
         $userId = $user ? $user->id : 1;
 
         $workouts = \App\Models\Workout::where('user_id', $userId)->get();
-        $healthLatest = \App\Models\HealthMetric::where('user_id', $userId)->latest()->first();
+        $healthLatest = \App\Models\HealthMetric::where('user_id', $userId)->orderBy('date', 'desc')->first();
+        $healthToday = \App\Models\HealthMetric::where('user_id', $userId)->where('date', now()->toDateString())->first();
         $healthQuery = \App\Models\HealthMetric::where('user_id', $userId);
 
         $streak = \App\Models\Workout::where('user_id', $userId)
@@ -188,8 +189,8 @@ class DashboardController extends Controller
             'total_workouts' => $workouts->count(),
             'total_calories' => $totalWorkoutCalories + $totalStepCalories,
             'weekly_volume'  => (float) $weeklyVolume,
-            'hydration'      => (float) ($healthLatest?->water_intake ?? 0),
-            'sleep'          => (float) ($healthLatest?->sleep_hours ?? 0),
+            'hydration'      => (float) ($healthToday?->water_intake ?? 0),
+            'sleep'          => (float) ($healthToday?->sleep_hours ?? 0),
             'weight'         => (float) ($healthLatest?->weight ?? 0),
             'heart_rate'     => (int) ($healthLatest?->heart_rate ?? 0),
             'avg_sleep'      => round($healthQuery->avg('sleep_hours') ?? 7.5, 1),

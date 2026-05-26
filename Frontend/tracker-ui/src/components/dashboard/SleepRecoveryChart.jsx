@@ -12,7 +12,7 @@ export default function SleepRecoveryChart() {
   useEffect(() => {
     const fetchHistory = () => {
       api.get('/health-dashboard').then(res => {
-        const sleepHours = res.data.latest ? parseFloat(res.data.latest.sleep_hours) : null;
+        const sleepHours = res.data.today ? parseFloat(res.data.today.sleep_hours) : null;
         if (sleepHours) setAvgSleep(sleepHours);
 
         const weeklyRaw = res.data.weekly || [];

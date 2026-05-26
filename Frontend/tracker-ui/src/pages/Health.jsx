@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Scale, Heart, TrendingDown, TrendingUp, Info, Plus, Calendar, Zap, Bot, ArrowRight, Activity, Moon, ShieldAlert } from 'lucide-react';
 import api from '../api/axios';
 import { toast } from 'react-hot-toast';
@@ -7,11 +8,7 @@ import { WeightTrendChart } from '../components/WeightTrendChart';
 import WeightPredictionChart from '../components/dashboard/WeightPredictionChart';
 
 export default function Health() {
-    const [history, setHistory] = useState([]);
-    const [latest, setLatest] = useState(null);
-    const [plan, setPlan] = useState(null);
-    const [weightLogs, setWeightLogs] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [view, setView] = useState('loss'); // 'loss' or 'gain'
     
     // Form state
@@ -21,42 +18,45 @@ export default function Health() {
     const [gender, setGender] = useState('Male');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            setLoading(true);
+    const { data: healthData, isLoading: loading } = useQuery({
+        queryKey: ['healthDashboardData'],
+        queryFn: async () => {
             const [hRes, pRes, wRes] = await Promise.all([
                 api.get('/body-metrics'),
                 api.get('/health-plan').catch(() => ({ data: null })),
                 api.get('/weight-logs').catch(() => ({ data: [] }))
             ]);
-            setHistory(hRes.data.history || []);
-            setLatest(hRes.data.latest);
-            setPlan(pRes.data);
-            setWeightLogs(wRes.data || []);
-            
-            if (hRes.data.latest) {
-                setHeight(hRes.data.latest.height);
-                setWeight(hRes.data.latest.weight);
-                setAge(hRes.data.latest.age || '');
-                setGender(hRes.data.latest.gender || 'Male');
-            }
-        } catch (err) {
-            console.error('Error fetching health data', err);
-        } finally {
-            setLoading(false);
+            return {
+                history: hRes.data.history || [],
+                latest: hRes.data.latest,
+                plan: pRes.data,
+                weightLogs: wRes.data || []
+            };
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
+    });
+
+    const history = healthData?.history || [];
+    const latest = healthData?.latest || null;
+    const plan = healthData?.plan || null;
+    const weightLogs = healthData?.weightLogs || [];
+
+    // Set initial form state when data arrives
+    useEffect(() => {
+        if (latest && !weight && !height) {
+            setHeight(latest.height);
+            setWeight(latest.weight);
+            setAge(latest.age || '');
+            setGender(latest.gender || 'Male');
         }
-    };
+    }, [latest, weight, height]);
 
     const handleLog = async (e) => {
         e.preventDefault();
         try {
             await api.post('/body-metrics', { weight, height, age, gender, date });
             toast.success('Body metrics logged successfully!');
-            fetchData();
+            queryClient.invalidateQueries({ queryKey: ['healthDashboardData'] });
         } catch (err) {
             toast.error('Failed to log metrics. Please check inputs.');
         }
@@ -66,7 +66,7 @@ export default function Health() {
         try {
             await api.post('/weight-logs', { weight: weightVal });
             toast.success('Current weight logged successfully!');
-            await fetchData();
+            queryClient.invalidateQueries({ queryKey: ['healthDashboardData'] });
         } catch (err) {
             toast.error('Error logging weight. Please try again.');
             throw err;

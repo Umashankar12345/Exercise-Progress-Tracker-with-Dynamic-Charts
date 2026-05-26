@@ -157,105 +157,11 @@ export default function AnalyticsDashboard() {
 
       </div>
 
-      {/* Main Grid: Chart + Side Metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative z-10">
-        
-        {/* Left Column: GitHub Style Calendar Heatmap */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
+      {/* Main Content: Chart */}
+      <div className="relative z-10">
+        <div className="flex flex-col gap-8">
           <WorkoutHeatmap />
         </div>
-
-        {/* Side panel: Health Biometrics */}
-        <div className="flex flex-col gap-6">
-          
-          {/* Hydration Widget */}
-          <div className="rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 backdrop-blur-xl shadow-xl flex items-center gap-5 relative overflow-hidden group hover:border-[#0EA5E9]/30 transition-colors">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#0EA5E9] opacity-5 blur-[35px] rounded-full pointer-events-none" />
-            <div className="w-12 h-12 rounded-2xl bg-[#0EA5E9]/10 border border-[#0EA5E9]/20 flex items-center justify-center text-[#0EA5E9] shrink-0">
-              <Droplet className="w-6 h-6 animate-bounce" style={{ animationDuration: '3s' }} />
-            </div>
-            <div className="flex-1 flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Hydration Balance</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleUpdateHealth('hydration', -0.25)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#0EA5E9]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#0EA5E9]">
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <button onClick={() => handleUpdateHealth('hydration', 0.25)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#0EA5E9]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#0EA5E9]">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-white">{dashboardAnalytics?.hydration ?? 0} L</span>
-                <span className="text-[10px] text-v2-soft-gray font-bold">/ {dashboardAnalytics?.water_goal ?? 3.5} L Target</span>
-              </div>
-              {/* Progress bar */}
-              <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
-                <div 
-                  className="bg-[#0EA5E9] h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(14,165,233,0.5)]" 
-                  style={{ width: `${Math.min(Math.round(((dashboardAnalytics?.hydration ?? 0) / (dashboardAnalytics?.water_goal ?? 3.5)) * 100), 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Sleep Hours Widget */}
-          <div className="rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 backdrop-blur-xl shadow-xl flex items-center gap-5 relative overflow-hidden group hover:border-[#3B82F6]/30 transition-colors">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#3B82F6] opacity-5 blur-[35px] rounded-full pointer-events-none" />
-            <div className="w-12 h-12 rounded-2xl bg-[#3B82F6]/10 border border-[#3B82F6]/20 flex items-center justify-center text-[#3B82F6] shrink-0">
-              <Moon className="w-6 h-6 animate-pulse" />
-            </div>
-            <div className="flex-1 flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Circadian Sleep</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleUpdateHealth('sleep', -0.5)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#3B82F6]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#3B82F6]">
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <button onClick={() => handleUpdateHealth('sleep', 0.5)} className="w-5 h-5 rounded bg-white/5 hover:bg-[#3B82F6]/20 flex items-center justify-center transition-colors text-white/50 hover:text-[#3B82F6]">
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-white">{dashboardAnalytics?.sleep ?? 0} h</span>
-                <span className="text-[10px] text-v2-soft-gray font-bold">/ {dashboardAnalytics?.sleep_goal ?? 8.0} h Target</span>
-              </div>
-              {/* Progress bar */}
-              <div className="w-full bg-white/5 rounded-full h-1.5 mt-1 overflow-hidden">
-                <div 
-                  className="bg-[#3B82F6] h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
-                  style={{ width: `${Math.min(Math.round(((dashboardAnalytics?.sleep ?? 0) / (dashboardAnalytics?.sleep_goal ?? 8.0)) * 100), 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Heart Rate Widget */}
-          <div className="rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 backdrop-blur-xl shadow-xl flex items-center gap-5 relative overflow-hidden group hover:border-[#EF4444]/30 transition-colors">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#EF4444] opacity-5 blur-[35px] rounded-full pointer-events-none" />
-            <div className="w-12 h-12 rounded-2xl bg-[#EF4444]/10 border border-[#EF4444]/20 flex items-center justify-center text-[#EF4444] shrink-0 relative">
-              <Heart className="w-6 h-6 text-[#EF4444] fill-[#EF4444] animate-ping absolute opacity-30" />
-              <Heart className="w-6 h-6 text-[#EF4444] fill-[#EF4444]" />
-            </div>
-            <div className="flex-1 flex flex-col gap-1">
-              <span className="text-[10px] font-black text-v2-soft-gray uppercase tracking-widest">Pulse & Cardio</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-white">
-                  {dashboardAnalytics?.heart_rate > 0 ? `${dashboardAnalytics.heart_rate} BPM` : '--'}
-                </span>
-                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Stable
-                </span>
-              </div>
-              <span className="text-[8px] font-medium text-v2-soft-gray uppercase tracking-widest mt-1">Automatic sync telemetry</span>
-            </div>
-          </div>
-
-        </div>
-
       </div>
     </div>
   );

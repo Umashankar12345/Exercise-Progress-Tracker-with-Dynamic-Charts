@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #131313;
+  --color-surface: #131313;
+  --color-surface-dim: #131313;
+  --color-surface-bright: #3a3939;
+  --color-surface-container: #201f1f;
+  --color-surface-container-high: #2a2a2a;
+  
+  --color-primary: #3b82f6;
+  --color-secondary: #10b981;
+  --color-tertiary: #f59e0b;
+  
+  --color-on-surface: #e5e2e1;
+  --color-on-surface-variant: #c2c6d6;
+  --color-outline: #8c909f;
+  --color-outline-variant: #424754;
+
+  /* V2 Enterprise Colors */
+  --color-v2-bg: #050816;
+  --color-v2-card: rgba(15, 23, 42, 0.65);
+  --color-v2-neon-blue: #00F5FF;
+  --color-v2-purple: #8B5CF6;
+  --color-v2-cyan: #22D3EE;
+  --color-v2-pink: #EC4899;
+  --color-v2-text-white: #E2E8F0;
+  --color-v2-soft-gray: #94A3B8;
+
+  --font-inter: "Inter", sans-serif;
+  
+  --radius-sm: 0.25rem;
+  --radius-DEFAULT: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-surface font-inter antialiased;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface-container/80 backdrop-blur-md border border-outline-variant rounded-xl;
+  }
+  
+  .glass-panel {
+    @apply bg-surface/90 backdrop-blur-xl border-r border-outline-variant;
+  }
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #131313; }
+::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 99px; }
+
+/* ── ANIMATIONS ── */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.95); }
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s infinite;
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+/* Cyber Neon Glowing & Scanning Effects */
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(300px); }
+}
+
+.animate-scan {
+  animation: scan-line 3s linear infinite;
+}
+
+@keyframes neon-glow-cyan {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 5px rgba(0, 229, 255, 0.05);
+    border-color: rgba(0, 229, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.35), inset 0 0 12px rgba(0, 229, 255, 0.15);
+    border-color: rgba(0, 229, 255, 0.6);
+  }
+}
+
+.animate-neon-glow-cyan {
+  animation: neon-glow-cyan 3.5s infinite ease-in-out;
+}
+
+@keyframes neon-glow-purple {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(124, 58, 237, 0.1), inset 0 0 5px rgba(124, 58, 237, 0.05);
+    border-color: rgba(124, 58, 237, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(124, 58, 237, 0.35), inset 0 0 12px rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.6);
+  }
+}
+
+.animate-neon-glow-purple {
+  animation: neon-glow-purple 3.5s infinite ease-in-out;
+}
+
+/* Holographic Background Grid & Microinteractions */
+.cyber-grid {
+  background-size: 30px 30px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 229, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 229, 255, 0.02) 1px, transparent 1px);
+  position: relative;
+}
+
+.cyber-grid::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(5, 8, 22, 0.8) 100%);
+  pointer-events: none;
+}
+
+@keyframes holographic-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.15)) drop-shadow(0 0 2px rgba(124, 58, 237, 0.1));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.35)) drop-shadow(0 0 5px rgba(124, 58, 237, 0.25));
+  }
+}
+
+.animate-holo-glow {
+  animation: holographic-glow 4s infinite ease-in-out;
+}
+
+@keyframes grid-drift {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 30px; }
+}
+
+.animate-grid-drift {
+  animation: grid-drift 20s linear infinite;
+}
+
+/* ── LIGHT MODE OVERRIDES ── */
+html.light-mode {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #000 !important; /* Inverts to white */
+}
+
+/* Double-invert media, maps, and charts so they retain their original colors */
+html.light-mode img,
+html.light-mode video,
+html.light-mode canvas,
+html.light-mode .leaflet-container {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Fix for specific UI elements that might need color preservation */
+html.light-mode [style*="background-image: url"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+

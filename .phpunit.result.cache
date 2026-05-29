@@ -1,0 +1,1 @@
+{"version":2,"defects":[],"times":{"Tests\\Unit\\ExampleTest::test_that_true_is_true":0.002,"Tests\\Feature\\ExampleTest::test_the_application_returns_a_successful_response":0.065,"Tests\\Feature\\JarvisChatTest::test_jarvis_chat_endpoint_resolves_json":7.988,"Tests\\Feature\\JarvisChatTest::test_jarvis_chat_endpoint_resolves_stream":0.057}}

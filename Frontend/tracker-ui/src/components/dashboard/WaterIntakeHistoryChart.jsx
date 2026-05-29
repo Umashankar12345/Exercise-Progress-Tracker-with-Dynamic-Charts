@@ -58,9 +58,12 @@ export default function WaterIntakeHistoryChart({ data: dashboardData }) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-gray-400 border border-white/5 rounded-2xl bg-white/[0.02]">
-            <Droplet className="w-8 h-8 opacity-20" />
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400 border border-white/5 rounded-2xl bg-white/[0.02]">
+            <Droplet className="w-8 h-8 opacity-40 text-[#0EA5E9]" />
+            <div className="text-center">
+              <div className="text-xs font-bold text-white mb-1">No hydration data</div>
+              <div className="text-[10px] text-white/50 mb-3">Log your water intake to see<br/>hydration trends.</div>
+            </div>
           </div>
         )}
       </div>

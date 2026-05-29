@@ -637,7 +637,7 @@ export default function Dashboard() {
             
             {/* Left Column - Today's Energy & Target Hydration */}
             <div className="flex flex-col gap-6">
-               <CaloriesBurnedChart data={dashboardData} />
+               <CaloriesBurnedChart data={dashboardData} onStartWorkout={handleStartWorkout} />
                <HydrationRing data={dashboardData} />
             </div>
 
@@ -650,7 +650,7 @@ export default function Dashboard() {
             {/* Right Column - Cognitive AI Guidance Core & Step Telemetry */}
             <div className="flex flex-col gap-6 xl:col-span-1 md:col-span-2">
                
-               <StepsHistoryChart data={dashboardData} />
+               <StepsHistoryChart data={dashboardData} onStartWorkout={handleStartWorkout} />
 
                {/* Jarvis AI Coach Launch Card */}
                <div className="w-full h-full rounded-3xl bg-gradient-to-br from-[#7C3AED]/20 via-[#0F172A] to-[#4F46E5]/10 border border-[#7C3AED]/20 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between shadow-[0_8px_30px_rgba(124,58,237,0.2)] min-h-[330px]">

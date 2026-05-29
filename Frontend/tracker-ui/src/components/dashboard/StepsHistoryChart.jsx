@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { Footprints, Flame } from 'lucide-react';
 import api from '../../api/axios';
 
-export default function StepsHistoryChart({ data: dashboardData }) {
+export default function StepsHistoryChart({ data: dashboardData, onStartWorkout }) {
   const data = dashboardData?.weekly_steps?.map(w => ({
     date: w.day,
     step_count: w.steps || 0,
@@ -57,9 +57,17 @@ export default function StepsHistoryChart({ data: dashboardData }) {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
-            <Footprints className="w-8 h-8 opacity-20" />
-            <span className="text-[10px] font-black uppercase tracking-widest opacity-50">No Data Available</span>
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-v2-soft-gray border border-white/5 rounded-2xl bg-white/[0.02]">
+            <Footprints className="w-8 h-8 opacity-40 text-[#10B981]" />
+            <div className="text-center">
+              <div className="text-xs font-bold text-white mb-1">No steps recorded</div>
+              <div className="text-[10px] text-white/50 mb-3">Sync your device or start a workout<br/>to track your steps.</div>
+              {onStartWorkout && (
+                <button onClick={onStartWorkout} className="px-4 py-1.5 bg-[#10B981]/20 hover:bg-[#10B981]/30 text-[#10B981] rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors border border-[#10B981]/30">
+                  Start Workout
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

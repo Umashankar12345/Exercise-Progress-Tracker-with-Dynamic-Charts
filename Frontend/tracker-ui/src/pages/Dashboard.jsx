@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import HeroSection from '../components/dashboard/HeroSection';
+import TopMetricsGrid from '../components/dashboard/TopMetricsGrid';
+import QuickLogActions from '../components/dashboard/QuickLogActions';
 import LiveWorkoutTrackerPanel from '../components/dashboard/LiveWorkoutTrackerPanel';
 import DashboardLiveGpsMap from '../components/dashboard/DashboardLiveGpsMap';
 import CaloriesBurnedChart from '../components/dashboard/CaloriesBurnedChart';
@@ -14,6 +15,7 @@ import { getEcho } from '../lib/echo';
 export default function Dashboard() {
   const { user } = useStore();
   const [insights, setInsights] = useState([]);
+  const [dashboardData, setDashboardData] = useState(null);
   
   // Active Workout Session State
   const [activeSession, setActiveSession] = useState(null);
@@ -575,6 +577,12 @@ export default function Dashboard() {
   }, []);
 
   // Quick insights fetcher
+  const fetchDashboardData = () => {
+    api.get('/dashboard/analytics')
+      .then(res => setDashboardData(res.data))
+      .catch(err => console.error("Failed to load dashboard data:", err));
+  };
+
   useEffect(() => {
     api.get('/insights/quick')
       .then(res => {
@@ -583,6 +591,8 @@ export default function Dashboard() {
         }
       })
       .catch(err => console.error("Failed to load quick insights:", err));
+
+    fetchDashboardData();
   }, []);
 
   return (
@@ -597,14 +607,18 @@ export default function Dashboard() {
 
 
       <div className="relative z-10 space-y-8 max-w-[1600px] mx-auto">
-         {/* TOP: Hero Section */}
-         <HeroSection onStartWorkout={handleStartWorkout} activeSession={activeSession} />
+         {/* TOP: Real Data Metrics Section */}
+         <div className="space-y-4">
+            <TopMetricsGrid data={dashboardData} />
+            <QuickLogActions onLogSuccess={fetchDashboardData} />
+         </div>
 
          {/* MIDDLE: Live Workout Tracker & Live GPS Route Map */}
          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5">
                <LiveWorkoutTrackerPanel 
                   activeSession={activeSession}
+                  onStartWorkout={handleStartWorkout}
                   onPause={handlePauseWorkout}
                   onResume={handleResumeWorkout}
                   onStop={handleStopWorkout}
@@ -623,20 +637,20 @@ export default function Dashboard() {
             
             {/* Left Column - Today's Energy & Target Hydration */}
             <div className="flex flex-col gap-6">
-               <CaloriesBurnedChart />
-               <HydrationRing />
+               <CaloriesBurnedChart data={dashboardData} />
+               <HydrationRing data={dashboardData} />
             </div>
 
             {/* Middle Column - 7-Day History Trends */}
             <div className="flex flex-col gap-6">
-               <SleepRecoveryChart />
-               <WaterIntakeHistoryChart />
+               <SleepRecoveryChart data={dashboardData} />
+               <WaterIntakeHistoryChart data={dashboardData} />
             </div>
 
             {/* Right Column - Cognitive AI Guidance Core & Step Telemetry */}
             <div className="flex flex-col gap-6 xl:col-span-1 md:col-span-2">
                
-               <StepsHistoryChart />
+               <StepsHistoryChart data={dashboardData} />
 
                {/* Jarvis AI Coach Launch Card */}
                <div className="w-full h-full rounded-3xl bg-gradient-to-br from-[#7C3AED]/20 via-[#0F172A] to-[#4F46E5]/10 border border-[#7C3AED]/20 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between shadow-[0_8px_30px_rgba(124,58,237,0.2)] min-h-[330px]">

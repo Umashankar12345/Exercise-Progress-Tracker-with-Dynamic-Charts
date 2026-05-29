@@ -4,44 +4,17 @@ import { Droplet } from 'lucide-react';
 import api from '../../api/axios';
 import useStore from '../../store/useStore';
 
-export default function WaterIntakeHistoryChart() {
+export default function WaterIntakeHistoryChart({ data: dashboardData }) {
   const { user } = useStore();
   const waterGoal = user?.water_goal || 3.5;
-  const [data, setData] = useState([]);
-  const [avgWater, setAvgWater] = useState(0);
+  
+  const data = dashboardData?.hydration_trends?.map(w => ({
+    day: w.day.charAt(0), // Take first letter of day
+    liters: w.water || 0
+  })) || [];
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await api.get('/health-dashboard');
-        const weeklyRaw = res.data.weekly || [];
-        
-        if (weeklyRaw.length > 0) {
-          const mapped = weeklyRaw.map(w => {
-            const waterVal = parseFloat(w.water_intake) || 0;
-            return {
-              day: w.day.charAt(0), // Take first letter of day (e.g. M, T, W)
-              liters: waterVal
-            };
-          });
-          setData(mapped);
-          
-          const sum = weeklyRaw.reduce((acc, curr) => acc + (parseFloat(curr.water_intake) || 0), 0);
-          setAvgWater(Number((sum / weeklyRaw.length).toFixed(1)));
-        } else {
-          setData([]);
-        }
-      } catch (err) {
-        console.error("Failed to load weekly water history:", err);
-      }
-    };
-    fetchHistory();
-
-    window.addEventListener('health-data-updated', fetchHistory);
-    return () => {
-      window.removeEventListener('health-data-updated', fetchHistory);
-    };
-  }, []);
+  const sum = data.reduce((acc, curr) => acc + curr.liters, 0);
+  const avgWater = data.length > 0 ? Number((sum / data.length).toFixed(1)) : 0;
 
   const maxLiters = Math.max(...data.map(d => d.liters), 1);
 

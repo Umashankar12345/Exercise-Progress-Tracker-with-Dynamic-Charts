@@ -3,31 +3,11 @@ import { Droplet } from 'lucide-react';
 import api from '../../api/axios';
 import useStore from '../../store/useStore';
 
-export default function HydrationRing() {
+export default function HydrationRing({ data: dashboardData }) {
   const { user } = useStore();
   const waterGoal = user?.water_goal || 3.5;
-  const [percentage, setPercentage] = useState(0);
-  const [waterIntake, setWaterIntake] = useState(0);
-
-  useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        const res = await api.get('/health-dashboard');
-        const currentWater = res.data.today ? parseFloat(res.data.today.water_intake) : 0;
-        setWaterIntake(currentWater);
-        const calcPercent = Math.min(Math.round((currentWater / waterGoal) * 100), 100);
-        setPercentage(calcPercent);
-      } catch (err) {
-        console.error("Failed to fetch health data", err);
-      }
-    };
-    fetchHealth();
-
-    window.addEventListener('health-data-updated', fetchHealth);
-    return () => {
-      window.removeEventListener('health-data-updated', fetchHealth);
-    };
-  }, []);
+  const waterIntake = dashboardData?.water || 0;
+  const percentage = Math.min(Math.round((waterIntake / waterGoal) * 100), 100);
 
   const radius = 60;
   const circumference = 2 * Math.PI * radius;

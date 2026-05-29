@@ -21,6 +21,7 @@ const SUPPORTED_EXERCISES = [
 
 export default function LiveWorkoutTrackerPanel({
   activeSession,
+  onStartWorkout,
   onPause,
   onResume,
   onStop,
@@ -236,10 +237,13 @@ export default function LiveWorkoutTrackerPanel({
               </button>
             </>
           ) : (
-            <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest text-[#00E5FF] px-2.5 py-1 bg-[#00E5FF]/10 border border-[#00E5FF]/30 rounded-lg">
-              <Activity className="w-3.5 h-3.5 animate-spin" />
-              System Standby
-            </div>
+            <button
+              onClick={onStartWorkout}
+              className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-black px-4 py-2 bg-[#00E5FF] border border-[#00E5FF]/30 rounded-xl hover:bg-[#00E5FF]/80 transition-all shadow-[0_0_15px_rgba(0,229,255,0.3)]"
+            >
+              <Activity className="w-4 h-4" />
+              Start Workout
+            </button>
           )}
         </div>
       </div>

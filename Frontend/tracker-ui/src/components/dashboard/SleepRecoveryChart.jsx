@@ -5,38 +5,14 @@ import api from '../../api/axios';
 
 
 
-export default function SleepRecoveryChart() {
-  const [data, setData] = useState([]);
-  const [avgSleep, setAvgSleep] = useState(null);
-
-  useEffect(() => {
-    const fetchHistory = () => {
-      api.get('/health-dashboard').then(res => {
-        const sleepHours = res.data.today ? parseFloat(res.data.today.sleep_hours) : null;
-        if (sleepHours) setAvgSleep(sleepHours);
-
-        const weeklyRaw = res.data.weekly || [];
-        if (weeklyRaw.length > 0) {
-          setData(weeklyRaw.map(w => {
-              const h = parseFloat(w.sleep_hours) || 0;
-              return {
-                  day: w.day.charAt(0),
-                  hours: h,
-                  score: Math.min(Math.round((h / 9) * 100), 100)
-              };
-          }));
-        } else {
-          setData([]);
-        }
-      }).catch(() => {});
-    };
-    fetchHistory();
-
-    window.addEventListener('health-data-updated', fetchHistory);
-    return () => {
-      window.removeEventListener('health-data-updated', fetchHistory);
-    };
-  }, []);
+export default function SleepRecoveryChart({ data: dashboardData }) {
+  const avgSleep = dashboardData?.sleep || null;
+  
+  const data = dashboardData?.sleep_trends?.map(w => ({
+    day: w.day.charAt(0),
+    hours: w.sleep || 0,
+    score: w.recovery || 50
+  })) || [];
 
   return (
     <div className="w-full h-[330px] rounded-3xl bg-[#0F172A]/50 border border-white/5 p-6 relative overflow-hidden backdrop-blur-xl group hover:-translate-y-1 hover:border-[#3B82F6]/30 transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.5)]">

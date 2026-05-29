@@ -3,37 +3,14 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { Footprints, Flame } from 'lucide-react';
 import api from '../../api/axios';
 
-export default function StepsHistoryChart() {
-  const [data, setData] = useState([]);
-  const [totalSteps, setTotalSteps] = useState(0);
-  const [totalCal, setTotalCal] = useState(0);
-
-  useEffect(() => {
-    const fetchSteps = async () => {
-      try {
-        const res = await api.get('/daily-steps?range=7d');
-        const rawData = res.data || [];
-        
-        if (rawData.length > 0) {
-          setData(rawData);
-          const stepsSum = rawData.reduce((acc, curr) => acc + (Number(curr.step_count) || 0), 0);
-          const calSum = rawData.reduce((acc, curr) => acc + (Number(curr.calories_burned) || 0), 0);
-          setTotalSteps(stepsSum);
-          setTotalCal(Math.round(calSum));
-        } else {
-          setData([]);
-        }
-      } catch (err) {
-        console.error("Failed to load steps history:", err);
-      }
-    };
-    fetchSteps();
-
-    window.addEventListener('health-data-updated', fetchSteps);
-    return () => {
-      window.removeEventListener('health-data-updated', fetchSteps);
-    };
-  }, []);
+export default function StepsHistoryChart({ data: dashboardData }) {
+  const data = dashboardData?.weekly_steps?.map(w => ({
+    date: w.day,
+    step_count: w.steps || 0,
+  })) || [];
+  
+  const totalSteps = data.reduce((acc, curr) => acc + curr.step_count, 0);
+  const totalCal = 0; // Steps history chart currently calculates calories based on steps; simplified here as dashboard data provides steps directly.
 
   const maxSteps = Math.max(...data.map(d => d.step_count), 1);
 

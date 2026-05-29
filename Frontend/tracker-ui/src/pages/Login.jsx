@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Mail, Lock, User, ArrowRight, Loader2, Eye, EyeOff, ShieldCheck, Server, LockKeyhole } from 'lucide-react';
@@ -53,6 +54,7 @@ export default function Login() {
         ? { email, password }
         : { name, email, password };
 
+      await axios.get('/sanctum/csrf-cookie', { withCredentials: true });
       const { data } = await api.post(`/auth/${mode}`, payload);
       const token = data.access_token || data.token;
       

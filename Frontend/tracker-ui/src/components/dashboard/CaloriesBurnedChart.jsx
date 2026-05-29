@@ -8,31 +8,13 @@ const DAY_MAP = {
   Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun'
 };
 
-export default function CaloriesBurnedChart() {
-  const [data, setData] = useState([]);
-  const [totalCalories, setTotalCalories] = useState(0);
-
-  useEffect(() => {
-    const fetchAnalytics = () => {
-      api.get('/workout-analytics').then(res => {
-        const weekly = res.data.weekly || [];
-        if (weekly.length > 0) {
-          const mapped = weekly.map(w => ({
-            name: DAY_MAP[w.day] || w.day,
-            kcal: w.calories || 0,
-          }));
-          setData(mapped);
-        }
-        setTotalCalories(res.data.total_calories || 0);
-      }).catch(() => {});
-    };
-    fetchAnalytics();
-
-    window.addEventListener('health-data-updated', fetchAnalytics);
-    return () => {
-      window.removeEventListener('health-data-updated', fetchAnalytics);
-    };
-  }, []);
+export default function CaloriesBurnedChart({ data: dashboardData }) {
+  const data = dashboardData?.weekly_progress?.map(w => ({
+    name: w.day,
+    kcal: w.calories || 0,
+  })) || [];
+  
+  const totalCalories = dashboardData?.total_calories || 0;
 
   const maxKcal = Math.max(...data.map(d => d.kcal), 1);
 

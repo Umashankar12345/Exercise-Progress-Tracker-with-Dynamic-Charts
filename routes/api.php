@@ -163,7 +163,7 @@ Route::group([], function () {
 
     // Dashboard summary — Cached for high-speed performance
     Route::get('/dashboard/summary', [AnalyticsController::class, 'getDashboardMetrics']);
-    Route::get('/dashboard/analytics', [DashboardController::class, 'analytics']);
+    Route::get('/dashboard/analytics', [AnalyticsController::class, 'analytics']);
 
     // Workout Session Engine
     Route::post('/workout-session/start', [WorkoutSessionController::class, 'start']);

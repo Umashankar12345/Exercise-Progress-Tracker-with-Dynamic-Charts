@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\WorkoutSet;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -85,10 +86,8 @@ class AnalyticsController extends Controller
         $dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         
         // Fix for SQLite/MySQL compatibility on day grouping
-        $dbDriver = DB::connection()->getDriverName();
-        $selectRaw = $dbDriver === 'sqlite' 
-            ? "strftime('%w', created_at) as day_num, COUNT(*) as count"
-            : "DAYOFWEEK(created_at) - 1 as day_num, COUNT(*) as count";
+        // Fix for SQLite/MySQL compatibility on day grouping
+        $selectRaw = "DAYOFWEEK(created_at) - 1 as day_num, COUNT(*) as count";
             
         $workoutChartRaw = \App\Models\Workout::where('user_id', $userId)
             ->selectRaw($selectRaw)

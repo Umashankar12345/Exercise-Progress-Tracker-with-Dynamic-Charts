@@ -3,49 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { registerWorkoutPersistedListener } from '../api/axios';
 import { useWorkoutStateSync } from './useWorkoutStateSync';
 
-/**
- * ──────────────────────────────────────────────────────────────────────────────
- * useDashboardSync — TanStack React Query Cache Invalidation Wrapper
- * ──────────────────────────────────────────────────────────────────────────────
- *
- * Enterprise-grade hook that automatically invalidates ALL active dashboard
- * query caches the instant a workout mutation is detected by the Axios
- * response interceptor.
- *
- * This forces all mounted TanStack Query observers (Volume Analytics,
- * Muscle Balance Bars, Consistency Training Matrix, PRs, etc.) to
- * simultaneously refetch their API states WITHOUT a webpage refresh.
- *
- * Query Key Architecture:
- *   ['dashboard', 'summary']      → Volume Analytics + KPI badges
- *   ['dashboard', 'consistency']   → Consistency Training Matrix (heatmap)
- *   ['progress', 'muscles']        → Muscle Balance Bars
- *   ['progress', 'summary']        → Workout stats overview
- *   ['workouts']                   → Workout list
- *   ['prs']                        → Personal Records list
- *   ['daily-steps']                → Step tracking chart
- *
- * Invalidation Strategy:
- *   On workout mutation → invalidateQueries({ queryKey: [...] }) for EACH
- *   panel key → TanStack refetches only the queries that have active
- *   observers (mounted components), skipping unmounted ones.
- *
- * Usage:
- *   ```jsx
- *   function Dashboard() {
- *     useDashboardSync();  // That's it — all panels auto-sync
- *
- *     const { data: summary } = useQuery({
- *       queryKey: ['dashboard', 'summary'],
- *       queryFn: () => api.get('/dashboard/summary').then(r => r.data),
- *     });
- *     // ...
- *   }
- *   ```
- * ──────────────────────────────────────────────────────────────────────────────
- */
 
-/** @type {ReadonlyArray<ReadonlyArray<string>>} All dashboard query keys to invalidate */
 const DASHBOARD_QUERY_KEYS = [
   ['dashboard', 'summary'],
   ['dashboard', 'consistency'],

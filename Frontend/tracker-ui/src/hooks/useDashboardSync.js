@@ -15,14 +15,7 @@ const DASHBOARD_QUERY_KEYS = [
   ['daily-steps'],
 ];
 
-/**
- * Hook: Invalidates all active dashboard TanStack Query caches on workout mutation.
- *
- * @param {Object} [options]
- * @param {boolean} [options.enabled=true]    - Whether auto-sync is active
- * @param {number}  [options.debounceMs=300]  - Debounce window for rapid mutations
- * @param {string[]} [options.additionalKeys] - Extra query keys to invalidate
- */
+
 export function useDashboardSync(options = {}) {
   const {
     enabled = true,
@@ -66,27 +59,7 @@ export function useDashboardSync(options = {}) {
   });
 }
 
-/**
- * ──────────────────────────────────────────────────────────────────────────────
- * useWorkoutMutation — TanStack-Integrated Workout Submission Helper
- * ──────────────────────────────────────────────────────────────────────────────
- *
- * Provides a submit function that POSTs a workout and then explicitly
- * invalidates the dashboard query cache. Use this as an alternative to
- * useDashboardSync when you want manual control over the invalidation
- * timing (e.g., after showing a success toast).
- *
- * Usage:
- *   ```jsx
- *   const { submitWorkout, isSubmitting } = useWorkoutMutation();
- *
- *   const handleSave = async () => {
- *     await submitWorkout(payload);
- *     toast.success('Workout logged!');
- *   };
- *   ```
- * ──────────────────────────────────────────────────────────────────────────────
- */
+
 export function useWorkoutMutation() {
   const queryClient = useQueryClient();
 
